@@ -16,16 +16,15 @@
 
 package zio.profiling
 
-import com.github.ghik.silencer.silent
 import zio._
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object CausalProfiler {
 
-  def profile[R <: Has[Clock], E](config: ProfilerConfig)(
+  def profile[R <: Clock, E](config: ProfilerConfig)(
     zio: ZIO[R, E, Any]
   )(implicit trace: ZTraceElement): ZIO[R, E, Result] =
     supervisor(config.iterations, config.scopeFilter, config.reportProgress).use { prof =>
@@ -43,12 +42,11 @@ object CausalProfiler {
       }
     }
 
-  @silent("JavaConverters")
   private def supervisor(
     iterations: Int,
     scopeFilter: ScopeFilter,
     reportProgress: Boolean
-  )(implicit trace: ZTraceElement): ZManaged[Has[Clock], Nothing, Supervisor[Result]] = {
+  )(implicit trace: ZTraceElement): ZManaged[Clock, Nothing, Supervisor[Result]] = {
 
     val fibers       = new ConcurrentHashMap[FiberId, FiberState]()
     val activeFibers = ConcurrentHashMap.newKeySet[FiberId]()
@@ -167,8 +165,8 @@ object CausalProfiler {
 
               def value(implicit trace: ZTraceElement): UIO[Result] = valuePromise.await
 
-              def unsafeOnStart[R, E, A](
-                environment: R,
+              override private[zio] def unsafeOnStart[R, E, A](
+                environment: ZEnvironment[R],
                 effect: ZIO[R, E, A],
                 parent: Option[Fiber.Runtime[Any, Any]],
                 fiber: Fiber.Runtime[E, A]

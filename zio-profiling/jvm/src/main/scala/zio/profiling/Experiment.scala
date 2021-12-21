@@ -16,11 +16,10 @@
 
 package zio.profiling
 
-import com.github.ghik.silencer.silent
 import zio.ZTraceElement
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 private final class Experiment(
   val candidate: ZTraceElement,
@@ -54,7 +53,6 @@ private final class Experiment(
     }
   }
 
-  @silent("JavaConverters")
   def toResult(): ExperimentResult =
     ExperimentResult(
       candidate,
@@ -85,7 +83,6 @@ private object Experiment {
     )
   }
 
-  @silent("JavaConverters")
   def fromPrevious(previous: Experiment, startTime: Long, candidate: ZTraceElement): Experiment = {
     val previousDeltas = previous.progressPoints.values().asScala
 
