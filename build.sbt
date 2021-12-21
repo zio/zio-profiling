@@ -28,12 +28,12 @@ addCommandAlias(
   ";zioProfilingJVM/test"
 )
 
-val zioVersion = "2.0.0-M4+37-70bf1b52-SNAPSHOT"
+val zioVersion = "2.0.0-RC1"
 
 lazy val root = project
   .in(file("."))
   .settings(
-    publish / skip := true,
+    publish / skip := true
   )
   .aggregate(zioProfilingJVM, docs)
 
@@ -52,7 +52,6 @@ lazy val zioProfiling = crossProject(JVMPlatform)
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(resolvers += Resolver.sonatypeRepo("snapshots"))
   .enablePlugins(BuildInfoPlugin)
-
 
 lazy val zioProfilingJVM = zioProfiling.jvm
   .settings(dottySettings)
