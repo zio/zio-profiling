@@ -16,11 +16,11 @@
 
 package zio.profiling
 
-import zio.ZTraceElement
-
 import java.util.concurrent.atomic.AtomicLong
 
-private final class FiberState(
+import zio.ZTraceElement
+
+final private class FiberState(
   val localDelay: AtomicLong,
   @volatile var location: ZTraceElement,
   @volatile var suspended: Boolean,

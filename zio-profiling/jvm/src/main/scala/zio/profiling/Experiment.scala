@@ -16,12 +16,15 @@
 
 package zio.profiling
 
-import zio.ZTraceElement
-
 import java.util.concurrent.ConcurrentHashMap
+
 import scala.jdk.CollectionConverters._
 
-private final class Experiment(
+import com.github.ghik.silencer.silent
+
+import zio.ZTraceElement
+
+final private class Experiment(
   val candidate: ZTraceElement,
   val startTime: Long,
   val duration: Long,
@@ -43,7 +46,7 @@ private final class Experiment(
   }
 
   def inProgressAt(time: Long): Boolean =
-    (time >= startTime && time < endTime)
+    time >= startTime && time < endTime
 
   def addProgressPointMeasurement(name: String): Unit = {
     val now = java.lang.System.nanoTime()
@@ -53,6 +56,7 @@ private final class Experiment(
     }
   }
 
+  @silent("JavaConverters")
   def toResult(): ExperimentResult =
     ExperimentResult(
       candidate,
@@ -83,6 +87,7 @@ private object Experiment {
     )
   }
 
+  @silent("JavaConverters")
   def fromPrevious(previous: Experiment, startTime: Long, candidate: ZTraceElement): Experiment = {
     val previousDeltas = previous.progressPoints.values().asScala
 

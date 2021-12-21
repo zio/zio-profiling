@@ -16,11 +16,12 @@
 
 package zio.profiling
 
-import zio._
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
+
 import scala.jdk.CollectionConverters._
+
+import zio._
 
 object CausalProfiler {
 
@@ -62,7 +63,7 @@ object CausalProfiler {
     def inProgress() =
       currentExperimentId < iterations
 
-    def log(msg: => String) =
+    def log(msg: => String): Unit =
       if (reportProgress) {
         println(s"CausalProfiler: $msg")
       }
@@ -70,7 +71,7 @@ object CausalProfiler {
     def calculateResult(): Result =
       Result(experiments.toList.map(_.toResult()), Samples(lifeTimeSamples.asScala.toMap))
 
-    def delayFiber(state: FiberState) = {
+    def delayFiber(state: FiberState): Unit = {
       val delay = globalDelay.get() - state.localDelay.get()
       if (delay > 0) {
         val before = java.lang.System.nanoTime()
