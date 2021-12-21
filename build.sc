@@ -19,6 +19,8 @@ object Deps {
   val zioTestSbt = ivy"dev.zio::zio-test-sbt:$zioVersion"
 }
 
+trait MDocModule extends JavaModule {}
+
 trait ZIOModule extends SbtModule with ScalafmtModule with ScalafixModule { outer =>
   def scalaVersion = "2.13.7"
   def scalafixScalaBinaryVersion = "2.13"
