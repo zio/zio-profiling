@@ -39,7 +39,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check Document Generation
-        run: sbt docs/docusaurusCreateSite
+        run: ./millw -i __.site.docusaurusBuild
 
   test:
     runs-on: ubuntu-20.04
@@ -48,8 +48,8 @@ jobs:
       fail-fast: false
       matrix:
         java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.11.12', '2.12.15', '2.13.6', '3.0.0']
-        platform: ['JVM', 'JS', 'Native']
+        scala: ['2.13.7']
+        platform: ['JVM']
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.3.4
@@ -62,10 +62,10 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
-        if: ${{ !startsWith(matrix.scala, '3.0.') }}
+        if: ${{ !startsWith(matrix.scala, '3.') }}
         run: sbt ++${{ matrix.scala }}! test${{ matrix.platform }}
       - name: Run dotty tests
-        if: ${{ startsWith(matrix.scala, '3.0.') && matrix.platform == 'JVM' }}
+        if: ${{ startsWith(matrix.scala, '3.') && matrix.platform == 'JVM' }}
         run: sbt ++${{ matrix.scala }}! testJVM
 
   ci:
