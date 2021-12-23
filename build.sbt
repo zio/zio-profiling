@@ -2,10 +2,10 @@ import BuildHelper._
 
 inThisBuild(
   List(
-    organization := "dev.zio",
-    homepage := Some(url("https://zio.github.io/zio-profiling/")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers := List(
+    organization  := "dev.zio",
+    homepage      := Some(url("https://zio.github.io/zio-profiling/")),
+    licenses      := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers    := List(
       Developer(
         "jdegoes",
         "John De Goes",
@@ -35,7 +35,7 @@ lazy val root = project
   .settings(
     publish / skip := true
   )
-  .aggregate(zioProfilingJVM, docs)
+  .aggregate(zioProfilingJVM, zioProfilingExamplesJVM, docs)
 
 lazy val zioProfiling = crossProject(JVMPlatform)
   .in(file("zio-profiling"))
@@ -55,22 +55,36 @@ lazy val zioProfiling = crossProject(JVMPlatform)
 
 lazy val zioProfilingJVM = zioProfiling.jvm
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(
+    libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test
+  )
   .settings(scalaReflectTestSettings)
+
+lazy val zioProfilingExamples = crossProject(JVMPlatform)
+  .in(file("zio-profiling-examples"))
+  .settings(stdSettings("zio-profiling-examples"))
+  .settings(crossProjectSettings)
+
+lazy val zioProfilingExamplesJVM = zioProfilingExamples.jvm
+  .settings(dottySettings)
+  .settings(
+    publish / skip := true
+  )
+  .dependsOn(zioProfilingJVM)
 
 lazy val docs = project
   .in(file("zio-profiling-docs"))
   .settings(stdSettings("zio-profiling"))
   .settings(
-    publish / skip := true,
-    moduleName := "zio-profiling-docs",
+    publish / skip                             := true,
+    moduleName                                 := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioProfilingJVM),
-    ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+    ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+    docusaurusCreateSite                       := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+    docusaurusPublishGhpages                   := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
   .dependsOn(zioProfilingJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
