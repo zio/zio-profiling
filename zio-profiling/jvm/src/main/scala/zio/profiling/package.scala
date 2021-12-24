@@ -17,12 +17,12 @@
 package zio
 
 package object profiling {
-  private[profiling] final val SamplingNanos          = 1000000
-  private[profiling] final val ExperimentMinTime      = 500000000L
-  private[profiling] final val ExperimentTargetDelta  = 15
-  private[profiling] final val ExperimentCoolOff: Int = SamplingNanos * 2
-  private[profiling] final val ZeroSpeedupWeight      = 10
-  private[profiling] final val MaxConsideredSpeedUp   = 100
+  final private[profiling] val SamplingNanos          = 1000000
+  final private[profiling] val ExperimentMinTime      = 500000000L
+  final private[profiling] val ExperimentTargetDelta  = 15
+  final private[profiling] val ExperimentCoolOff: Int = SamplingNanos * 2
+  final private[profiling] val ZeroSpeedupWeight      = 10
+  final private[profiling] val MaxConsideredSpeedUp   = 100
 
   // tags that we need to execute delays before
   // anything that can wake a another fiber should be here

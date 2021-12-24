@@ -16,9 +16,9 @@
 
 package zio.profiling
 
-import zio._
-
 import java.nio.file.{Files, Paths}
+
+import zio._
 
 final case class Result(experiments: List[ExperimentResult], samples: Samples) {
 

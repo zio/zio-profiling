@@ -18,12 +18,12 @@ package zio.profiling
 
 import scala.reflect.ClassTag
 
-private final class VolatileArray[A: ClassTag](val length: Int) {
+final private class VolatileArray[A: ClassTag](val length: Int) {
 
   private[this] val array = new Array[A](length)
 
   @volatile
-  private[this] var marker = 0;
+  private[this] var marker = 0
 
   def apply(i: Int): A           = { marker; array(i) }
   def update(i: Int, x: A): Unit = { array(i) = x; marker = 0 }
