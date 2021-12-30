@@ -1,12 +1,24 @@
 import mill._
+import mill.scalalib._
 import mill.modules.Jvm
-import scalalib._
+
+// Scalafix and Scala Format
 import mill.scalalib.scalafmt.ScalafmtModule
 import $ivy.`com.goyeau::mill-scalafix:0.2.6`
 import com.goyeau.mill.scalafix.ScalafixModule
+
+// Add simple mdoc support for mill
+import $ivy.`de.wayofquality.blended::de.wayofquality.blended.mill.mdoc::0.0.1-4-0ce9fb`
+import de.wayofquality.mill.mdoc.MDocModule
+
+// Add simple docusaurus2 support for mill
+import $ivy.`de.wayofquality.blended::de.wayofquality.blended.mill.docusaurus2::0.0.0-4-cc55b8`
+import de.wayofquality.mill.docusaurus2.Docusaurus2Module
+
 import mill.define.Sources
 import os.Path
 
+// It's convenient to keep the base project directory around
 val projectDir = build.millSourcePath
 
 object Deps {
@@ -23,125 +35,11 @@ object Deps {
   val zioTestSbt = ivy"dev.zio::zio-test-sbt:$zioVersion"
 }
 
-trait MDocModule extends ScalaModule {
-
-  def scalaMdocVersion : T[String] = "2.2.24"
-
-  def scalaMDocDep : T[Dep] = ivy"org.scalameta::mdoc:${scalaMdocVersion()}"
-
-  def watchedMDocsDestination: T[Option[Path]] = T(None)
-
-  override def ivyDeps: T[Agg[Dep]] = T {
-    super.ivyDeps() ++ Agg(scalaMDocDep())
-  }
-
-  // where do the mdoc sources live ?
-  def mdocSources = T.sources { super.millSourcePath }
-
-  def mdoc : T[PathRef] = T {
-
-    val cp = runClasspath().map(_.path)
-
-    val dir = T.dest.toIO.getAbsolutePath()
-    val dirParams = mdocSources().map(pr => Seq(s"--in", pr.path.toIO.getAbsolutePath, "--out",  dir)).iterator.flatten.toSeq
-
-    Jvm.runLocal("mdoc.Main", cp, dirParams)
-
-    PathRef(T.dest)
-  }
-
-  def mdocWatch() = T.command {
-
-    watchedMDocsDestination().foreach{ p =>
-      val cp = runClasspath().map(_.path)
-      val dirParams = mdocSources().map(pr => Seq(s"--in", pr.path.toIO.getAbsolutePath, "--out",  p.toIO.getAbsolutePath)).iterator.flatten.toSeq
-      Jvm.runLocal("mdoc.Main", cp, dirParams ++ Seq("--watch"))
-    }
-
-  }
-}
-
-trait DocusaurusModule extends Module {
-
-  def docusaurusSources : Sources
-  def compiledMdocs : Sources
-
-  def yarnInstall : T[PathRef] = T {
-    val baseDir = T.dest
-
-    docusaurusSources().foreach{ pr =>
-      os.list(pr.path).foreach(p => os.copy.into(p, baseDir, true, true, true, true, false))
-    }
-
-    val process = Jvm.spawnSubprocess(
-      commandArgs = Seq(
-        "yarn", "install", "--check-files"
-      ),
-      envArgs = Map.empty,
-      workingDir = T.dest
-    )
-    process.join()
-    T.log.info(new String(process.stdout.bytes))
-    PathRef(T.dest)
-  }
-
-  def docusaurusBuild : T[PathRef] = T {
-    val workDir = T.dest
-    val yarnSetup = yarnInstall().path
-
-    os.list(workDir).foreach(os.remove.all)
-    os.list(yarnSetup).foreach { p =>
-      os.copy.into(p, workDir, followLinks = true, replaceExisting = true, copyAttributes = true, createFolders = true, mergeFolders = false)
-    }
-
-    val docsDir = workDir / "docs"
-    os.makeDir.all(docsDir)
-    os.list(docsDir).foreach(os.remove.all)
-
-    docusaurusSources().foreach { pr =>
-      val bd = pr.path
-      os.walk(pr.path / "docs").foreach { p =>
-        val relPath = p.relativeTo(bd / "docs")
-        T.log.info(relPath.toString())
-        if (p.toIO.isFile) {
-          os.copy.over(p, docsDir / relPath)
-        }
-      }
-    }
-
-    compiledMdocs().foreach{ pr =>
-      os.list(pr.path).foreach(p => os.copy.into(p, docsDir, followLinks = true, replaceExisting = true, copyAttributes = true, createFolders = true, mergeFolders = true))
-    }
-
-    val p1 = Jvm.spawnSubprocess(
-      commandArgs = Seq(
-        "yarn", "install", "--force"
-      ),
-      envArgs = Map.empty,
-      workingDir = workDir
-    )
-
-    p1.join()
-
-    val p2 = Jvm.spawnSubprocess(
-      commandArgs = Seq(
-        "yarn", "build"
-      ),
-      envArgs = Map.empty,
-      workingDir = workDir
-    )
-
-    p2.join()
-
-    PathRef(workDir)
-  }
-}
-
 trait ZIOModule extends SbtModule with ScalafmtModule with ScalafixModule { outer =>
-  def scalaVersion = Deps.scalaVersion
-  def scalafixScalaBinaryVersion = "2.13"
+  def scalaVersion = T(Deps.scalaVersion)
+  def scalafixScalaBinaryVersion = T("2.13")
 
-  override def scalacOptions = Seq(
+  override def scalacOptions = T(Seq(
     "-deprecation",
     "-Ywarn-unused",
     "-encoding",
@@ -155,7 +53,7 @@ trait ZIOModule extends SbtModule with ScalafmtModule with ScalafixModule { oute
     "-Wunused:patvars",
     "-Wunused:privates",
     "-Wvalue-discard"
-  )
+  ))
 
   override def scalacPluginIvyDeps = T {
     super.scalacPluginIvyDeps() ++
@@ -163,10 +61,10 @@ trait ZIOModule extends SbtModule with ScalafmtModule with ScalafixModule { oute
   }
 
   trait Tests extends super.Tests with ScalafmtModule with ScalafixModule  {
-    def scalaVersion = outer.scalaVersion
-    def scalafixScalaBinaryVersion = outer.scalafixScalaBinaryVersion
+    override def scalaVersion = outer.scalaVersion
+    override def scalafixScalaBinaryVersion = outer.scalafixScalaBinaryVersion
 
-    override def testFramework: T[String] = "zio.test.sbt.ZTestFramework"
+    override def testFramework: T[String] = T("zio.test.sbt.ZTestFramework")
 
     override def ivyDeps = Agg(Deps.zioTest, Deps.zioTestSbt)
   }
@@ -175,8 +73,8 @@ trait ZIOModule extends SbtModule with ScalafmtModule with ScalafixModule { oute
 
 object zio extends Module {
 
-  object site extends DocusaurusModule with MDocModule {
-    def scalaVersion = Deps.scalaVersion
+  object site extends Docusaurus2Module with MDocModule {
+    override def scalaVersion = T(Deps.scalaVersion)
     override def mdocSources = T.sources{ projectDir / "docs" }
     override def docusaurusSources = T.sources(
       projectDir / "website",
@@ -204,7 +102,7 @@ object zio extends Module {
       override def moduleDeps = Seq(profiling)
 
       override def millSourcePath: Path = projectDir / "zio-profiling-examples" / "jvm"
-      override def artifactName: T[String] = "zio-profiling-examples"
+      override def artifactName: T[String] = T("zio-profiling-examples")
     }
 
   }
