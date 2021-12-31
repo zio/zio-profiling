@@ -12,7 +12,7 @@ import $ivy.`de.wayofquality.blended::de.wayofquality.blended.mill.mdoc::0.0.1-4
 import de.wayofquality.mill.mdoc.MDocModule
 
 // Add simple docusaurus2 support for mill
-import $ivy.`de.wayofquality.blended::de.wayofquality.blended.mill.docusaurus2::0.0.0-4-cc55b8`
+import $ivy.`de.wayofquality.blended::de.wayofquality.blended.mill.docusaurus2::0.0.1`
 import de.wayofquality.mill.docusaurus2.Docusaurus2Module
 
 import mill.define.Sources
