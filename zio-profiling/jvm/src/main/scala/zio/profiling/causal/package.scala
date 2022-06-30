@@ -18,15 +18,15 @@ package zio.profiling
 
 import zio._
 
-final case class ExperimentResult(
-  selected: ZTraceElement,
-  speedup: Float,
-  duration: Long,
-  selectedSamples: Long,
-  throughputData: List[ThroughputData]
-) {
+package object causal extends TagModule with ScopeSelectorModule {
 
-  lazy val render: List[String] =
-    s"experiment\tselected=$selected\tspeedup=$speedup\tduration=$duration\tselected-samples=$selectedSamples" :: throughputData
-      .map(_.render)
+  private[causal] val GlobalTrackerRef: FiberRef[Tracker] =
+    Unsafe.unsafeCompat(implicit u => FiberRef.unsafe.make(Tracker.noop))
+
+  def progressPoint(name: String)(implicit trace: Trace): UIO[Unit] =
+    GlobalTrackerRef.get.flatMap { tracker =>
+      ZIO.succeed {
+        tracker.progressPoint(name)
+      }
+    }
 }

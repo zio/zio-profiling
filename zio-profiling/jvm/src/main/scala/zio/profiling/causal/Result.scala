@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package zio.profiling
+package zio.profiling.causal
 
-import scala.reflect.ClassTag
+import java.nio.file.{Files, Paths}
 
-final private class VolatileArray[A: ClassTag](val length: Int) {
+import zio._
 
-  private[this] val array = new Array[A](length)
+final case class Result(experiments: List[ExperimentResult]) {
 
-  @volatile
-  private[this] var marker = 0
+  lazy val render: String =
+    experiments.flatMap(_.render).mkString("\n")
 
-  def apply(i: Int): A           = { marker; array(i) }
-  def update(i: Int, x: A): Unit = { array(i) = x; marker = 0 }
-  def toList: List[A]            = { marker; array.toList }
+  def writeToFile(pathString: String): Task[Unit] =
+    ZIO.attempt {
+      val path      = Paths.get(pathString)
+      val parentDir = path.getParent()
+      if (parentDir ne null) {
+        Files.createDirectories(parentDir)
+      }
+      Files.write(path, render.getBytes())
+      ()
+    }
 }

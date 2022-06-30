@@ -28,7 +28,7 @@ addCommandAlias(
   ";zioProfilingJVM/test"
 )
 
-val zioVersion = "2.0.0-RC1"
+val zioVersion = "2.0.0-RC6+146-7a355dd4-SNAPSHOT"
 
 lazy val root = project
   .in(file("."))

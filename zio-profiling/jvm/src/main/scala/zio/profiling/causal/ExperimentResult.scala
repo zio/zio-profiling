@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package zio.profiling
+package zio.profiling.causal
 
-import zio.ZTraceElement
+final case class ExperimentResult(
+  selected: String,
+  speedup: Float,
+  duration: Long,
+  effectiveDuration: Long,
+  selectedSamples: Long,
+  throughputData: List[ThroughputData]
+) {
 
-final case class ScopeFilter(run: ZTraceElement => Boolean)
-
-object ScopeFilter {
-
-  val Default: ScopeFilter =
-    ScopeFilter(trace => !trace.toString.startsWith("zio.internal"))
+  lazy val render: List[String] =
+    s"experiment\tselected=$selected\tspeedup=$speedup\tduration=$effectiveDuration\tselected-samples=$selectedSamples" :: throughputData
+      .map(_.render)
 }

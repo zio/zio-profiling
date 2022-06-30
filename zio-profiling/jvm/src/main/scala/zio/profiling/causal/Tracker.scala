@@ -14,25 +14,12 @@
  * limitations under the License.
  */
 
-package zio.profiling
+package zio.profiling.causal
 
-import java.nio.file.{Files, Paths}
+private trait Tracker {
+  def progressPoint(name: String): Unit
+}
 
-import zio._
-
-final case class Result(experiments: List[ExperimentResult], samples: Samples) {
-
-  lazy val render: String =
-    (experiments.flatMap(_.render) ++ samples.render).mkString("\n")
-
-  def writeToFile(pathString: String): Task[Unit] =
-    ZIO.attempt {
-      val path      = Paths.get(pathString)
-      val parentDir = path.getParent()
-      if (parentDir ne null) {
-        Files.createDirectories(parentDir)
-      }
-      Files.write(path, render.getBytes())
-      ()
-    }
+private object Tracker {
+  val noop: Tracker = _ => ()
 }
