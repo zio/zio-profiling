@@ -28,7 +28,8 @@ addCommandAlias(
   ";zioProfilingJVM/test"
 )
 
-val zioVersion = "2.0.0-RC6+146-7a355dd4-SNAPSHOT"
+// TODO: causal profiler relies on changes in https://github.com/zio/zio/pull/6980
+val zioVersion = "2.0.0"
 
 lazy val root = project
   .in(file("."))
