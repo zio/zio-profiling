@@ -6,7 +6,7 @@ import zio.profiling.causal._
 object CausalProfilerToyExample2 extends ZIOAppDefault {
   def run =
     CausalProfiler
-      .profile(ProfilerConfig.Default.copy(iterations = 100)) { prog.forever }
+      .profile(ProfilerConfig.Default.copy(iterations = 100))(prog.forever)
       .flatMap(_.writeToFile("profile.coz"))
       .exitCode
 
@@ -19,7 +19,7 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
     _    <- progressPoint("workDone")
   } yield ()
 
-  def doRealWork = ZIO.blocking(ZIO.succeed({ Thread.sleep(100); }))
+  def doRealWork = ZIO.blocking(ZIO.succeed { Thread.sleep(100); })
 
-  def doUselessBackgroundWork = ZIO.blocking(ZIO.succeed({ Thread.sleep(30); }))
+  def doUselessBackgroundWork = ZIO.blocking(ZIO.succeed { Thread.sleep(30); })
 }
