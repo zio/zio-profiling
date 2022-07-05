@@ -19,7 +19,7 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
     _    <- progressPoint("workDone")
   } yield ()
 
-  def doRealWork = ZIO.blocking(ZIO.succeed { Thread.sleep(100); })
+  def doRealWork = ZIO.blocking(ZIO.succeed(Thread.sleep(100);))
 
-  def doUselessBackgroundWork = ZIO.blocking(ZIO.succeed { Thread.sleep(30); })
+  def doUselessBackgroundWork = ZIO.blocking(ZIO.succeed(Thread.sleep(30);))
 }
