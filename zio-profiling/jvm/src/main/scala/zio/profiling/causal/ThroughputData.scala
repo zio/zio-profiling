@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package zio.profiling
+package zio.profiling.causal
 
-private trait Tracker {
-  def progressPoint(name: String): Unit
+final case class ThroughputData(name: String, delta: Int) {
+
+  lazy val render: String =
+    s"throughput-point\tname=$name\tdelta=$delta"
 }

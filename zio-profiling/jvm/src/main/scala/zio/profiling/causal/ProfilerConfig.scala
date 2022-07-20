@@ -14,20 +14,38 @@
  * limitations under the License.
  */
 
-package zio.profiling
+package zio.profiling.causal
+
+import zio._
 
 final case class ProfilerConfig(
   iterations: Int,
-  scopeFilter: ScopeFilter,
-  reportProgress: Boolean
+  scope: ScopeSelector,
+  reportProgress: Boolean,
+  samplingPeriod: Duration,
+  minExperimentDuration: Duration,
+  experimentTargetSamples: Int,
+  warmUpPeriod: Duration,
+  coolOffPeriod: Duration,
+  zeroSpeedupWeight: Int,
+  maxConsideredSpeedUp: Int,
+  sleepPrecision: Duration
 )
 
 object ProfilerConfig {
 
   val Default: ProfilerConfig =
     ProfilerConfig(
-      iterations = 100,
-      scopeFilter = ScopeFilter.Default,
-      reportProgress = true
+      iterations = 10,
+      scope = ScopeSelector.Default,
+      reportProgress = true,
+      samplingPeriod = 20.millis,
+      minExperimentDuration = 1.second,
+      experimentTargetSamples = 30,
+      warmUpPeriod = 30.seconds,
+      coolOffPeriod = 2.seconds,
+      zeroSpeedupWeight = 10,
+      maxConsideredSpeedUp = 100,
+      sleepPrecision = 10.millis
     )
 }

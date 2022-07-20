@@ -1,27 +1,28 @@
 package zio.profiling.examples
 
 import zio._
-import zio.profiling._
+import zio.profiling.causal._
 
-object CasualProfilerProducerConsumerExample extends ZIOAppDefault {
+object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
 
-  val Items         = 1000000
-  val QueueSize     = 50
-  val ProducerCount = 20
+  val Items         = 10000
+  val QueueSize     = 1
+  val ProducerCount = 1
   val ConsumerCount = 5
 
-  def run: URIO[Clock, ExitCode] = {
+  def run = {
     val program = Queue.bounded[Unit](QueueSize).flatMap { queue =>
       def producer =
-        queue.offer(()).repeatN((Items / ProducerCount) - 1)
+        queue.offer(()).repeatN((Items / ProducerCount) - 1) <# "producer"
 
       def consumer =
-        (queue.take *> CausalProfiler.progressPoint("consumed")).repeatN((Items / ConsumerCount) - 1)
+        (queue.take).repeatN((Items / ConsumerCount) - 1)
 
       for {
         producers <- ZIO.forkAll(List.fill(ProducerCount)(producer))
         consumers <- ZIO.forkAll(List.fill(ConsumerCount)(consumer))
         _         <- producers.join *> consumers.join
+        _         <- progressPoint("iteration")
       } yield ()
     }
 

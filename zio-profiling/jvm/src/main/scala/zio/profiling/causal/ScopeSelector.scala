@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package zio.profiling
+package zio.profiling.causal
 
-import java.util.concurrent.atomic.AtomicLong
+import zio.profiling.Tag
 
-import zio.ZTraceElement
+final case class ScopeSelector(run: Tag => Option[Tag])
 
-final private class FiberState(
-  val localDelay: AtomicLong,
-  @volatile var location: ZTraceElement,
-  @volatile var suspended: Boolean,
-  @volatile var preSuspendGlobalDelay: Long
-)
+object ScopeSelector {
+  def below(scope: Tag): ScopeSelector =
+    ScopeSelector { tag =>
+      if (tag.isValid) scope.getDirectDescendant(tag) else None
+    }
+
+  def belowRecursive(scope: Tag): ScopeSelector =
+    ScopeSelector { tag =>
+      if (tag.isValid && scope.isPrefixOf(tag)) Some(tag) else None
+    }
+
+  val Default: ScopeSelector =
+    below(Tag.Root)
+}

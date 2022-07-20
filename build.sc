@@ -25,7 +25,7 @@ object Deps {
   val scalaVersion = "2.13.7"
 
   val silencerVersion = "1.7.7"
-  val zioVersion = "2.0.0-RC1"
+  val zioVersion = "2.0.0"
 
   val silencer = ivy"com.github.ghik:::silencer-lib:$silencerVersion"
   val silencerPlugin = ivy"com.github.ghik:::silencer-lib:$silencerVersion"
