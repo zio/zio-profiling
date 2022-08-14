@@ -1,11 +1,12 @@
 package zio.profiling.examples
 
 import zio._
+import zio.URIO
 import zio.profiling.causal._
 
 object CausalProfilerToyExample extends ZIOAppDefault {
 
-  def run =
+  def run: URIO[Any, ExitCode] =
     CausalProfiler
       .profile(ProfilerConfig.Default.copy(iterations = 100, scope = Root / "program" / *)) {
         val io = for {

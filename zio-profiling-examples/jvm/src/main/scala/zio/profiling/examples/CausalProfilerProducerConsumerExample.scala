@@ -1,6 +1,7 @@
 package zio.profiling.examples
 
 import zio._
+import zio.URIO
 import zio.profiling.causal._
 
 object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
@@ -10,7 +11,7 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
   val ProducerCount = 1
   val ConsumerCount = 5
 
-  def run = {
+  def run: URIO[Any, ExitCode] = {
     val program = Queue.bounded[Unit](QueueSize).flatMap { queue =>
       def producer =
         queue.offer(()).repeatN((Items / ProducerCount) - 1) <# "producer"

@@ -1,16 +1,17 @@
 package zio.profiling.examples
 
 import zio._
+import zio.URIO
 import zio.profiling.causal._
 
 object CausalProfilerToyExample2 extends ZIOAppDefault {
-  def run =
+  def run: URIO[Any, ExitCode] =
     CausalProfiler
       .profile(ProfilerConfig.Default.copy(iterations = 100))(prog.forever)
       .flatMap(_.writeToFile("profile.coz"))
       .exitCode
 
-  val prog = for {
+  val prog: ZIO[Any, Nothing, Unit] = for {
     done <- Ref.make(false)
     f    <- (doUselessBackgroundWork *> done.get).repeatUntilEquals(true).fork <# "backgroundwork"
     _    <- doRealWork <# "realwork"
@@ -19,7 +20,7 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
     _    <- progressPoint("workDone")
   } yield ()
 
-  def doRealWork = ZIO.blocking(ZIO.succeed(Thread.sleep(100);))
+  def doRealWork: ZIO[Any, Nothing, Unit] = ZIO.blocking(ZIO.succeed(Thread.sleep(100)))
 
-  def doUselessBackgroundWork = ZIO.blocking(ZIO.succeed(Thread.sleep(30);))
+  def doUselessBackgroundWork: ZIO[Any, Nothing, Unit] = ZIO.blocking(ZIO.succeed(Thread.sleep(30)))
 }
