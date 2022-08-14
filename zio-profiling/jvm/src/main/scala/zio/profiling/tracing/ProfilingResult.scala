@@ -11,6 +11,7 @@ object ProfilingResult {
     location: Tag.TaggedLocation,
     totalCalls: Long,
     totalTime: Long,
-    maxTime: Long
+    maxTime: Long,
+    averageTime: Long,
   )
 }

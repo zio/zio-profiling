@@ -37,7 +37,16 @@ object TracingProfiler {
         ZIO.succeed {
           val entries = locationData.entrySet().asScala.map { entry =>
             val data = entry.getValue()
-            ProfilingResult.Entry(entry.getKey, data.numberOfCalls.get(), data.totalTime.get(), data.maxTime.get())
+            val numberOfCalls = data.numberOfCalls.get()
+            val totalTime = data.totalTime.get()
+            val maxTime = data.maxTime.get()
+            ProfilingResult.Entry(
+              entry.getKey,
+              numberOfCalls,
+              totalTime,
+              maxTime,
+              totalTime / numberOfCalls,
+            )
           }
           ProfilingResult(entries.toList)
         }
