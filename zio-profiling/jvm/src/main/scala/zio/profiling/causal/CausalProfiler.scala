@@ -122,7 +122,7 @@ object CausalProfiler {
               while (experiment == null && iterator.hasNext()) {
                 val fiber = iterator.next()
                 if (fiber.running) {
-                  scope.run(fiber.taggedLocation).foreach { candidate =>
+                  scope.select(fiber.taggedLocation).foreach { candidate =>
                     results match {
                       case previous :: _ =>
                         val minDelta     =
@@ -182,7 +182,7 @@ object CausalProfiler {
                 val iterator = fibers.values.iterator()
                 while (iterator.hasNext()) {
                   val fiber = iterator.next()
-                  if (fiber.running && experiment.candidate.isPrefixOf(fiber.taggedLocation)) {
+                  if (fiber.running && fiber.taggedLocation.isDescendantOf(experiment.candidate)) {
                     val delayAmount = (experiment.speedUp * samplingPeriodNanos).toLong
                     fiber.localDelay.addAndGet(delayAmount)
                     globalDelay += delayAmount
@@ -249,7 +249,7 @@ object CausalProfiler {
                 fibers.put(fiber.id, state)
                 freshState = true
               } else if (state.lastEffectWasStateful) {
-                state.refreshTag(fiber)
+                state.refreshCostCenter(fiber)
                 state.lastEffectWasStateful = false
               }
 
@@ -277,7 +277,7 @@ object CausalProfiler {
               if (state ne null) {
                 if (state.lastEffectWasStateful) {
                   state.lastEffectWasStateful = false
-                  state.refreshTag(fiber)
+                  state.refreshCostCenter(fiber)
                 }
                 state.running = false
               } else {

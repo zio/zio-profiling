@@ -8,7 +8,7 @@ object CausalProfilerToyExample extends ZIOAppDefault {
 
   def run: URIO[Any, ExitCode] =
     CausalProfiler
-      .profile(ProfilerConfig.Default.copy(iterations = 100, scope = Root / "program" / *)) {
+      .profile(ProfilerConfig.Default.copy(iterations = 100, scope = Root / "program" / *, reportProgress = true)) {
         val io = for {
           _    <- progressPoint("iteration start")
           short = ZIO.blocking(ZIO.succeed(Thread.sleep(40))) <# "short"

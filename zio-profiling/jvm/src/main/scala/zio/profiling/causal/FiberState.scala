@@ -19,11 +19,11 @@ package zio.profiling.causal
 import java.util.concurrent.atomic.AtomicLong
 
 import zio._
-import zio.profiling.{Tag, TagRef}
+import zio.profiling.{CostCenter, CostCenterRef}
 
 final private class FiberState private (
   val localDelay: AtomicLong,
-  @volatile var tag: Tag,
+  @volatile var costCenter: CostCenter,
   @volatile var location: Trace,
   @volatile var running: Boolean,
   @volatile var lastEffectWasStateful: Boolean,
@@ -31,11 +31,11 @@ final private class FiberState private (
   @volatile var preAsyncGlobalDelay: Long
 ) {
 
-  def refreshTag(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): Unit =
-    tag = fiber.unsafe.getFiberRefs().getOrDefault(TagRef)
+  def refreshCostCenter(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): Unit =
+    costCenter = CostCenter.getCurrent(fiber)
 
-  def taggedLocation: Tag =
-    tag #> location
+  def taggedLocation: CostCenter =
+    costCenter #> location
 }
 
 private object FiberState {
@@ -43,14 +43,13 @@ private object FiberState {
   def makeFor(fiber: Fiber.Runtime[_, _], inheritedDelay: Long)(implicit unsafe: Unsafe): FiberState = {
     val state = new FiberState(
       new AtomicLong(inheritedDelay),
-      Tag.Root,
+      CostCenter.getCurrent(fiber),
       Trace.empty,
       true,
       false,
       false,
       0
     )
-    state.refreshTag(fiber)
     state
   }
 }

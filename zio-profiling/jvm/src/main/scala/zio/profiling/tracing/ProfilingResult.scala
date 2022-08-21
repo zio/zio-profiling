@@ -3,7 +3,8 @@ package zio.profiling.tracing
 import java.nio.file.{Files, Paths}
 
 import zio._
-import zio.profiling.Tag
+import zio.profiling.CostCenter
+import zio.profiling.CostCenter._
 
 final case class ProfilingResult(
   entries: List[ProfilingResult.Entry]
@@ -13,13 +14,13 @@ final case class ProfilingResult(
     def renderLocation(location: Trace) =
       if (location == Trace.empty) "unknown_location" else location.toString
 
-    def render(location: Tag): String =
+    def render(location: CostCenter): String =
       location match {
-        case Tag.Root                               => ""
-        case Tag.Child(Tag.Root, name)              => name
-        case Tag.Child(parent, name)                => s"${render(parent)};$name"
-        case Tag.TaggedLocation(Tag.Root, location) => renderLocation(location)
-        case Tag.TaggedLocation(tag, location)      => s"${render(tag)};${renderLocation(location)}"
+        case Root                           => ""
+        case Child(Root, name)              => name
+        case Child(parent, name)            => s"${render(parent)};$name"
+        case TaggedLocation(Root, location) => renderLocation(location)
+        case TaggedLocation(tag, location)  => s"${render(tag)};${renderLocation(location)}"
       }
 
     val overallTotaltime = entries.map(_.totalTime).sum
@@ -44,7 +45,7 @@ final case class ProfilingResult(
 
 object ProfilingResult {
   final case class Entry(
-    location: Tag.TaggedLocation,
+    location: CostCenter.TaggedLocation,
     totalCalls: Long,
     totalTime: Long,
     maxTime: Long,

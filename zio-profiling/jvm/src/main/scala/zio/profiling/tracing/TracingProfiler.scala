@@ -7,7 +7,7 @@ import scala.jdk.CollectionConverters._
 
 import zio._
 import zio.UIO
-import zio.profiling.Tag.TaggedLocation
+import zio.profiling.CostCenter.TaggedLocation
 
 object TracingProfiler {
 
@@ -95,7 +95,7 @@ object TracingProfiler {
         }
 
         if (state.lastEffectWasStateful) {
-          state.refreshTag(fiber)
+          state.refreshCostCenter(fiber)
           state.lastEffectWasStateful = false
         }
 

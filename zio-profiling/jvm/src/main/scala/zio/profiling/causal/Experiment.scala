@@ -22,10 +22,10 @@ import scala.jdk.CollectionConverters._
 
 import com.github.ghik.silencer.silent
 
-import zio.profiling.Tag
+import zio.profiling.CostCenter
 
 final private class Experiment(
-  val candidate: Tag,
+  val candidate: CostCenter,
   val startTime: Long,
   val duration: Long,
   val speedUp: Float,

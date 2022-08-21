@@ -16,21 +16,21 @@
 
 package zio.profiling.causal
 
-import zio.profiling.Tag
+import zio.profiling.CostCenter
 
-final case class ScopeSelector(run: Tag => Option[Tag])
+final case class ScopeSelector(select: CostCenter => Option[CostCenter])
 
 object ScopeSelector {
-  def below(scope: Tag): ScopeSelector =
-    ScopeSelector { tag =>
-      if (tag.isValid) scope.getDirectDescendant(tag) else None
+  def below(scope: CostCenter): ScopeSelector =
+    ScopeSelector { cc =>
+      if (cc.isValid) scope.getOneLevelDownFrom(cc) else None
     }
 
-  def belowRecursive(scope: Tag): ScopeSelector =
-    ScopeSelector { tag =>
-      if (tag.isValid && scope.isPrefixOf(tag)) Some(tag) else None
+  def belowRecursive(scope: CostCenter): ScopeSelector =
+    ScopeSelector { cc =>
+      if (cc.isValid && cc.isChildOf(scope)) Some(cc) else None
     }
 
   val Default: ScopeSelector =
-    below(Tag.Root)
+    below(CostCenter.Root)
 }

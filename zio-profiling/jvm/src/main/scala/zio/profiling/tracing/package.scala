@@ -1,3 +1,3 @@
 package zio.profiling
 
-package object tracing extends TagModule
+package object tracing extends TaggingModule

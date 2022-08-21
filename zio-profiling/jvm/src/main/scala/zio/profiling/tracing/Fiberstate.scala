@@ -1,32 +1,31 @@
 package zio.profiling.tracing
 
 import zio._
-import zio.profiling.{Tag, TagRef}
+import zio.profiling.CostCenter
 
 final private class FiberState private (
-  @volatile var tag: Tag,
+  @volatile var costCenter: CostCenter,
   @volatile var location: Trace,
   @volatile var timestamp: Long,
   @volatile var lastEffectWasStateful: Boolean
 ) {
 
-  def refreshTag(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): Unit =
-    tag = fiber.unsafe.getFiberRefs().getOrDefault(TagRef)
+  def refreshCostCenter(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): Unit =
+    costCenter = CostCenter.getCurrent(fiber)
 
-  def taggedLocation: Tag.TaggedLocation =
-    tag #> location
+  def taggedLocation: CostCenter.TaggedLocation =
+    costCenter #> location
 
 }
 
 private object FiberState {
   def makeFor(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): FiberState = {
     val state = new FiberState(
-      Tag.Root,
+      CostCenter.getCurrent(fiber),
       null.asInstanceOf[Trace],
       0,
       false
     )
-    state.refreshTag(fiber)
     state
   }
 
