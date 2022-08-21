@@ -34,7 +34,6 @@ sealed trait Tag { self =>
         else getDirectDescendant(parent)
     }
 
-
   def render: String = {
     def renderLocation(location: Trace) =
       if (location == Trace.empty) "unknown_location" else location.toString

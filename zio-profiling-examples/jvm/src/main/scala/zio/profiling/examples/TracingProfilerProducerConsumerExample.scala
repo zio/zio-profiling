@@ -19,8 +19,7 @@ object TracingProfilerProducerConsumerExample extends ZIOAppDefault {
           .repeatN((Items / ProducerCount) - 1) <# "producer"
 
       def consumer =
-        queue
-          .take
+        queue.take
           .repeatN((Items / ConsumerCount) - 1) <# "consumer"
 
       for {
