@@ -17,9 +17,9 @@ final case class ProfilingResult(
 
     def renderCostCenter(costCenter: CostCenter): String =
       costCenter match {
-        case Root                           => ""
-        case Child(Root, name)              => name
-        case Child(parent, name)            => s"${renderCostCenter(parent)};$name"
+        case Root                => ""
+        case Child(Root, name)   => name
+        case Child(parent, name) => s"${renderCostCenter(parent)};$name"
       }
 
     def renderLocation(taggedLocation: TaggedLocation) =
