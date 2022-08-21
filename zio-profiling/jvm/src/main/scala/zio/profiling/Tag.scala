@@ -34,16 +34,21 @@ sealed trait Tag { self =>
         else getDirectDescendant(parent)
     }
 
-  def render: String =
+
+  def render: String = {
+    def renderLocation(location: Trace) =
+      if (location == Trace.empty) "unknown_location" else location.toString
+
     self match {
       case Root                             => ""
       case Child(parent, name)              =>
         if (parent == Root) name
         else s"${parent.render}>$name"
       case TaggedLocation(parent, location) =>
-        if (parent == Root) location.toString
-        else s"${parent.render}@$location"
+        if (parent == Root) renderLocation(location)
+        else s"${parent.render}@${renderLocation(location)}"
     }
+  }
 }
 
 object Tag {
