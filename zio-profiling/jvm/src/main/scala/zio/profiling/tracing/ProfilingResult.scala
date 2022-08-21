@@ -5,28 +5,33 @@ import java.nio.file.{Files, Paths}
 import zio._
 import zio.profiling.CostCenter
 import zio.profiling.CostCenter._
+import zio.profiling.TaggedLocation
 
 final case class ProfilingResult(
   entries: List[ProfilingResult.Entry]
 ) {
 
   def stackCollapse: List[String] = {
-    def renderLocation(location: Trace) =
-      if (location == Trace.empty) "unknown_location" else location.toString
+    def renderTrace(trace: Trace) =
+      if (trace == Trace.empty) "<unknown_location>" else trace.toString
 
-    def render(location: CostCenter): String =
-      location match {
+    def renderCostCenter(costCenter: CostCenter): String =
+      costCenter match {
         case Root                           => ""
         case Child(Root, name)              => name
-        case Child(parent, name)            => s"${render(parent)};$name"
-        case TaggedLocation(Root, location) => renderLocation(location)
-        case TaggedLocation(tag, location)  => s"${render(tag)};${renderLocation(location)}"
+        case Child(parent, name)            => s"${renderCostCenter(parent)};$name"
       }
+
+    def renderLocation(taggedLocation: TaggedLocation) =
+      if (taggedLocation.costCenter.isRoot)
+        renderTrace(taggedLocation.location)
+      else
+        s"${renderCostCenter(taggedLocation.costCenter)};${renderTrace(taggedLocation.location)}"
 
     val overallTotaltime = entries.map(_.totalTime).sum
     entries.map { entry =>
       val percentage = entry.totalTime.toDouble / overallTotaltime
-      s"${render(entry.location)} ${(percentage * 1000).toInt}"
+      s"${renderLocation(entry.location)} ${(percentage * 1000).toInt}"
     }
   }
 
@@ -45,7 +50,7 @@ final case class ProfilingResult(
 
 object ProfilingResult {
   final case class Entry(
-    location: CostCenter.TaggedLocation,
+    location: TaggedLocation,
     totalCalls: Long,
     totalTime: Long,
     maxTime: Long,

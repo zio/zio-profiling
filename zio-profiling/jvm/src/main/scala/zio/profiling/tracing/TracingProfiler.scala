@@ -7,7 +7,7 @@ import scala.jdk.CollectionConverters._
 
 import zio._
 import zio.UIO
-import zio.profiling.CostCenter.TaggedLocation
+import zio.profiling.TaggedLocation
 
 object TracingProfiler {
 

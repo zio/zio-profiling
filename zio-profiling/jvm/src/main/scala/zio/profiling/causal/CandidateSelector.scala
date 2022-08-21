@@ -18,19 +18,17 @@ package zio.profiling.causal
 
 import zio.profiling.CostCenter
 
-final case class ScopeSelector(select: CostCenter => Option[CostCenter])
+final case class CandidateSelector(select: CostCenter => Option[CostCenter])
 
-object ScopeSelector {
-  def below(scope: CostCenter): ScopeSelector =
-    ScopeSelector { cc =>
-      if (cc.isValid) scope.getOneLevelDownFrom(cc) else None
+object CandidateSelector {
+  def below(scope: CostCenter): CandidateSelector =
+    CandidateSelector(scope.getOneLevelDownFrom)
+
+  def belowRecursive(scope: CostCenter): CandidateSelector =
+    CandidateSelector { cc =>
+      if (cc.isDescendantOf(scope)) Some(cc) else None
     }
 
-  def belowRecursive(scope: CostCenter): ScopeSelector =
-    ScopeSelector { cc =>
-      if (cc.isValid && cc.isChildOf(scope)) Some(cc) else None
-    }
-
-  val Default: ScopeSelector =
+  val Default: CandidateSelector =
     below(CostCenter.Root)
 }

@@ -122,7 +122,7 @@ object CausalProfiler {
               while (experiment == null && iterator.hasNext()) {
                 val fiber = iterator.next()
                 if (fiber.running) {
-                  scope.select(fiber.taggedLocation).foreach { candidate =>
+                  candidateSelector.select(fiber.costCenter).foreach { candidate =>
                     results match {
                       case previous :: _ =>
                         val minDelta     =
@@ -159,7 +159,7 @@ object CausalProfiler {
               if (experiment != null) {
                 samplingState = SamplingState.ExperimentInProgress(experiment, iteration, results)
                 ZIO.logInfo(
-                  s"Starting experiment $iteration (candidate: ${experiment.candidate.render}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration})"
+                  s"Starting experiment $iteration (costCenter: ${experiment.candidate.render}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration})"
                 )
               } else {
                 ZIO.unit
@@ -182,7 +182,7 @@ object CausalProfiler {
                 val iterator = fibers.values.iterator()
                 while (iterator.hasNext()) {
                   val fiber = iterator.next()
-                  if (fiber.running && fiber.taggedLocation.isDescendantOf(experiment.candidate)) {
+                  if (fiber.running && fiber.costCenter.isDescendantOf(experiment.candidate)) {
                     val delayAmount = (experiment.speedUp * samplingPeriodNanos).toLong
                     fiber.localDelay.addAndGet(delayAmount)
                     globalDelay += delayAmount
@@ -268,7 +268,6 @@ object CausalProfiler {
                 case _                  =>
                   ()
               }
-              state.location = effect.trace
             }
 
             // previous events could be {onStart, onResume, onEffect}

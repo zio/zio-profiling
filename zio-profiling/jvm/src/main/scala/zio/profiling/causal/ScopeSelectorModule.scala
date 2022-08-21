@@ -26,10 +26,10 @@ object ScopeSelectorModule extends ScopeSelectorModule {
   }
 
   final class ScopeSelectorTagSyntax(val tag: CostCenter) extends AnyVal {
-    def /(pattern: Pattern): ScopeSelector =
+    def /(pattern: Pattern): CandidateSelector =
       pattern match {
-        case Pattern.All       => ScopeSelector.below(tag)
-        case Pattern.Recursive => ScopeSelector.belowRecursive(tag)
+        case Pattern.All       => CandidateSelector.below(tag)
+        case Pattern.Recursive => CandidateSelector.belowRecursive(tag)
       }
   }
 

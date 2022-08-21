@@ -20,7 +20,7 @@ import zio._
 
 final case class ProfilerConfig(
   iterations: Int,
-  scope: ScopeSelector,
+  candidateSelector: CandidateSelector,
   reportProgress: Boolean,
   samplingPeriod: Duration,
   minExperimentDuration: Duration,
@@ -37,7 +37,7 @@ object ProfilerConfig {
   val Default: ProfilerConfig =
     ProfilerConfig(
       iterations = 10,
-      scope = ScopeSelector.Default,
+      candidateSelector = CandidateSelector.Default,
       reportProgress = true,
       samplingPeriod = 20.millis,
       minExperimentDuration = 1.second,
