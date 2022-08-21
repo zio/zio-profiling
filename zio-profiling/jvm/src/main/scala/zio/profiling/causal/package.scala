@@ -18,7 +18,7 @@ package zio.profiling
 
 import zio._
 
-package object causal extends TagModule with ScopeSelectorModule {
+package object causal extends TaggingModule with ScopeSelectorModule {
 
   private[causal] val GlobalTrackerRef: FiberRef[Tracker] =
     Unsafe.unsafeCompat(implicit u => FiberRef.unsafe.make(Tracker.noop))

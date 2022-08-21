@@ -2,10 +2,10 @@ package zio.profiling
 
 import scala.language.implicitConversions
 
-import zio.{Tag => _, _}
+import zio._
 
-trait TagModule {
-  import TagModule._
+trait TaggingModule {
+  import TaggingModule._
 
   implicit def zioSyntax[R, E, A](zio: ZIO[R, E, A]): TagZIOSyntax[R, E, A] =
     new TagZIOSyntax(zio)
@@ -13,14 +13,14 @@ trait TagModule {
   def withTag(name: String): WithTagPartiallyApplied =
     new WithTagPartiallyApplied(name)
 
-  val Root: Tag = Tag.Root
+  val Root: CostCenter.Root.type = CostCenter.Root
 }
 
-object TagModule extends TagModule {
+object TaggingModule extends TaggingModule {
 
   final class WithTagPartiallyApplied(name: String) {
     def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-      TagRef.locallyWith(_ / name)(zio)
+      CostCenterRef.locallyWith(_ / name)(zio)
   }
 
   final class TagZIOSyntax[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
