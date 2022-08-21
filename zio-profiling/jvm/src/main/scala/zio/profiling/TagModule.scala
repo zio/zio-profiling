@@ -19,12 +19,12 @@ trait TagModule {
 object TagModule extends TagModule {
 
   final class WithTagPartiallyApplied(name: String) {
-    def apply[R, E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
+    def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
       TagRef.locallyWith(_ / name)(zio)
   }
 
   final class TagZIOSyntax[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
-    def <#(name: String): ZIO[R, E, A] =
+    def <#(name: String)(implicit trace: Trace): ZIO[R, E, A] =
       withTag(name)(zio)
   }
 }

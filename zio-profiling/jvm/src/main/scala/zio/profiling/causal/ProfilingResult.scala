@@ -20,7 +20,7 @@ import java.nio.file.{Files, Paths}
 
 import zio._
 
-final case class Result(experiments: List[ExperimentResult]) {
+final case class ProfilingResult(experiments: List[ExperimentResult]) {
 
   lazy val render: String =
     experiments.flatMap(_.render).mkString("\n")

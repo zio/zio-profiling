@@ -23,7 +23,7 @@ import zio.Unsafe.unsafe
 
 object CausalProfiler {
   final class ProfilePartiallyApplied(config: ProfilerConfig) {
-    def apply[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, Result] =
+    def apply[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
       ZIO.scoped[R] {
         supervisor(config).flatMap { prof =>
           zio
@@ -35,10 +35,10 @@ object CausalProfiler {
       }
   }
 
-  def profile[R, E](config: ProfilerConfig): ProfilePartiallyApplied =
+  def profile(config: ProfilerConfig): ProfilePartiallyApplied =
     new ProfilePartiallyApplied(config)
 
-  def supervisor(config: ProfilerConfig)(implicit trace: Trace): ZIO[Scope, Nothing, Supervisor[Result]] = {
+  def supervisor(config: ProfilerConfig)(implicit trace: Trace): ZIO[Scope, Nothing, Supervisor[ProfilingResult]] = {
     import config._
 
     val sleepPrecisionNanos        = sleepPrecision.toNanos()
@@ -86,8 +86,9 @@ object CausalProfiler {
           throw new InterruptedException()
         } else if (timeLeft > sleepPrecisionNanos) {
           Thread.sleep((timeLeft - sleepPrecisionNanos).nanos.toMillis);
+        } else {
+          // busy spin
         }
-        // busy spin
         timeLeft = end - java.lang.System.nanoTime()
       }
       nanoDuration - timeLeft
@@ -104,7 +105,7 @@ object CausalProfiler {
     }
 
     GlobalTrackerRef.locallyScoped(tracker).zipRight {
-      Promise.make[Nothing, Result].flatMap { valuePromise =>
+      Promise.make[Nothing, ProfilingResult].flatMap { resultPromise =>
         val runSamplingStep = ZIO.suspendSucceed {
           val now = java.lang.System.nanoTime()
           samplingState match {
@@ -169,7 +170,7 @@ object CausalProfiler {
                 val result = experiment.toResult()
                 if (iteration >= iterations) {
                   unsafe { implicit u =>
-                    valuePromise.unsafe.done(ZIO.succeed(Result(result :: results)))
+                    resultPromise.unsafe.done(ZIO.succeed(ProfilingResult(result :: results)))
                   }
                   samplingState = SamplingState.Done
                   ZIO.logInfo(s"Profiling done. Total duration: ${now - startTime}ns")
@@ -203,7 +204,7 @@ object CausalProfiler {
         }
 
         runSamplingStep.repeat(Schedule.spaced(samplingPeriod)).fork.as {
-          new Supervisor[Result] {
+          new Supervisor[ProfilingResult] {
 
             // first event in fiber lifecycle. No previous events to consider.
             override def onStart[R, E, A](
@@ -303,7 +304,7 @@ object CausalProfiler {
               }
             }
 
-            def value(implicit trace: Trace): UIO[Result] = valuePromise.await
+            def value(implicit trace: Trace): UIO[ProfilingResult] = resultPromise.await
           }
         }
       }

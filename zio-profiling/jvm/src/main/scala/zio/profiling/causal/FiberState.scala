@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 import zio._
 import zio.profiling.{Tag, TagRef}
 
-final private class FiberState(
+final private class FiberState private (
   val localDelay: AtomicLong,
   @volatile var tag: Tag,
   @volatile var location: Trace,
