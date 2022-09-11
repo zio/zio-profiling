@@ -54,7 +54,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Compile sources
-        run: ./sbt ++${{ matrix.scala }}! compile
+        run: ./sbt ++${{ matrix.scala }}! compileSources
 
   test:
     runs-on: ubuntu-20.04
@@ -78,7 +78,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
-        run: ./sbt ++${{ matrix.scala }}! test
+        run: ./sbt ++${{ matrix.scala }}! testAll
 
   publishLocal:
     runs-on: ubuntu-20.04
