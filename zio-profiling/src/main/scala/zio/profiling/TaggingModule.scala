@@ -1,8 +1,8 @@
 package zio.profiling
 
-import scala.language.implicitConversions
-
 import zio._
+
+import scala.language.implicitConversions
 
 trait TaggingModule {
   import TaggingModule._

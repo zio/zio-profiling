@@ -1,13 +1,11 @@
 package zio.profiling.tracing
 
+import zio.profiling.TaggedLocation
+import zio.{UIO, _}
+
 import java.lang.System.nanoTime
 import java.util.concurrent.ConcurrentHashMap
-
 import scala.jdk.CollectionConverters._
-
-import zio._
-import zio.UIO
-import zio.profiling.TaggedLocation
 
 object TracingProfiler {
 
@@ -102,7 +100,7 @@ object TracingProfiler {
         effect match {
           case ZIO.Stateful(_, _) =>
             state.lastEffectWasStateful = true
-          case _                  => ()
+          case _ => ()
         }
 
         state.location = effect.trace

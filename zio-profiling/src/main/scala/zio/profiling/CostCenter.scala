@@ -1,7 +1,6 @@
 package zio.profiling
 
-import zio.{Fiber, Trace}
-import zio.Unsafe
+import zio.{Fiber, Trace, Unsafe}
 
 sealed trait CostCenter { self =>
   import CostCenter._
@@ -31,7 +30,7 @@ sealed trait CostCenter { self =>
 
   def getOneLevelDownFrom(other: CostCenter): Option[CostCenter] =
     other match {
-      case Root             => None
+      case Root => None
       case Child(parent, _) =>
         if (self == parent) Some(other)
         else getOneLevelDownFrom(parent)
@@ -39,7 +38,7 @@ sealed trait CostCenter { self =>
 
   def render: String =
     self match {
-      case Root                => "<root>"
+      case Root => "<root>"
       case Child(parent, name) =>
         if (parent == Root) name
         else s"${parent.render}>$name"

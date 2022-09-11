@@ -53,6 +53,8 @@ object BuildHelper {
       semanticdbVersion                                          := scalafixSemanticdb.revision,
       ThisBuild / scalafixScalaBinaryVersion                     := CrossVersion.binaryScalaVersion(scalaVersion.value),
       ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % organizeImportsVersion,
+      Compile / fork                                             := true,
+      Test / fork                                                := true,
       Test / parallelExecution                                   := true,
       incOptions ~= (_.withLogRecompileOnMacro(false)),
       autoAPIMappings  := true,

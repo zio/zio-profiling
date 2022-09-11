@@ -16,13 +16,11 @@
 
 package zio.profiling.causal
 
-import java.util.concurrent.ConcurrentHashMap
-
-import scala.jdk.CollectionConverters._
-
 import com.github.ghik.silencer.silent
-
 import zio.profiling.CostCenter
+
+import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters._
 
 final private class Experiment(
   val candidate: CostCenter,

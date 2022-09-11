@@ -1,8 +1,8 @@
 package zio.profiling.causal
 
-import scala.language.implicitConversions
-
 import zio.profiling.CostCenter
+
+import scala.language.implicitConversions
 
 trait ScopeSelectorModule {
   import ScopeSelectorModule._

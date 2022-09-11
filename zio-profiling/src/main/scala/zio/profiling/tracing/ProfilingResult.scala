@@ -1,11 +1,10 @@
 package zio.profiling.tracing
 
-import java.nio.file.{Files, Paths}
-
 import zio._
-import zio.profiling.CostCenter
 import zio.profiling.CostCenter._
-import zio.profiling.TaggedLocation
+import zio.profiling.{CostCenter, TaggedLocation}
+
+import java.nio.file.{Files, Paths}
 
 final case class ProfilingResult(
   entries: List[ProfilingResult.Entry]

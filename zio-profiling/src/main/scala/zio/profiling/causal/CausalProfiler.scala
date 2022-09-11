@@ -16,10 +16,10 @@
 
 package zio.profiling.causal
 
-import java.util.concurrent.ConcurrentHashMap
-
-import zio._
 import zio.Unsafe.unsafe
+import zio._
+
+import java.util.concurrent.ConcurrentHashMap
 
 object CausalProfiler {
   final class ProfilePartiallyApplied(config: ProfilerConfig) {
@@ -65,7 +65,7 @@ object CausalProfiler {
 
       def delayFiber(state: FiberState): Unit =
         samplingState match {
-          case SamplingState.Done                          =>
+          case SamplingState.Done =>
             ()
           case SamplingState.ExperimentInProgress(_, _, _) =>
             val delay = globalDelay - state.localDelay.get()
@@ -74,7 +74,7 @@ object CausalProfiler {
               state.localDelay.addAndGet(actualSleep)
               ()
             }
-          case _                                           =>
+          case _ =>
             state.localDelay.set(globalDelay)
         }
 
@@ -105,7 +105,7 @@ object CausalProfiler {
           samplingState match {
             case SamplingState.ExperimentInProgress(experiment, _, _) =>
               experiment.addProgressPointMeasurement(name)
-            case _                                                    =>
+            case _ =>
               ()
           }
       }
@@ -130,7 +130,7 @@ object CausalProfiler {
                     candidateSelector.select(fiber.costCenter).foreach { candidate =>
                       results match {
                         case previous :: _ =>
-                          val minDelta     =
+                          val minDelta =
                             if (previous.throughputData.nonEmpty) previous.throughputData.map(_.delta).min else 0
                           val nextDuration =
                             if (minDelta < experimentTargetSamples) {
@@ -149,7 +149,7 @@ object CausalProfiler {
                             selectSpeedUp(),
                             new ConcurrentHashMap[String, Int]()
                           )
-                        case Nil           =>
+                        case Nil =>
                           experiment = new Experiment(
                             candidate,
                             now,
@@ -256,7 +256,7 @@ object CausalProfiler {
                 effect match {
                   case ZIO.Stateful(_, _) =>
                     state.lastEffectWasStateful = true
-                  case ZIO.Sync(_, _)     =>
+                  case ZIO.Sync(_, _) =>
                     if (!freshState) {
                       state.running = false
                       delayFiber(state)
@@ -265,7 +265,7 @@ object CausalProfiler {
                   case ZIO.Async(_, _, _) =>
                     state.preAsyncGlobalDelay = globalDelay
                     state.inAsync = true
-                  case _                  =>
+                  case _ =>
                     ()
                 }
               }

@@ -1,8 +1,7 @@
 package zio.profiling.examples
 
-import zio._
-import zio.URIO
 import zio.profiling.tracing._
+import zio.{URIO, _}
 
 object TracingProfilerProducerConsumerExample extends ZIOAppDefault {
 

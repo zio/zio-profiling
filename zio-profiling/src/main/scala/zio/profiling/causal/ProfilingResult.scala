@@ -16,9 +16,9 @@
 
 package zio.profiling.causal
 
-import java.nio.file.{Files, Paths}
-
 import zio._
+
+import java.nio.file.{Files, Paths}
 
 final case class ProfilingResult(experiments: List[ExperimentResult]) {
 

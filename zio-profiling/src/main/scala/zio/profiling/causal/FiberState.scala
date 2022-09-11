@@ -16,10 +16,10 @@
 
 package zio.profiling.causal
 
-import java.util.concurrent.atomic.AtomicLong
-
 import zio._
 import zio.profiling.CostCenter
+
+import java.util.concurrent.atomic.AtomicLong
 
 final private class FiberState private (
   val localDelay: AtomicLong,

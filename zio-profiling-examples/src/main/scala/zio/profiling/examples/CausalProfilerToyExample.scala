@@ -1,8 +1,7 @@
 package zio.profiling.examples
 
-import zio._
-import zio.URIO
 import zio.profiling.causal._
+import zio.{URIO, _}
 
 object CausalProfilerToyExample extends ZIOAppDefault {
 
