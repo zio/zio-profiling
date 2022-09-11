@@ -59,7 +59,7 @@ object CausalProfiler {
       var globalDelay = 0L
 
       def logMessage(msg: => String) =
-        unsafe { implicit u =>
+        unsafe { implicit u: Unsafe =>
           runtime.log(() => msg, Cause.empty, ZIO.someInfo, trace)
         }
 
@@ -172,7 +172,7 @@ object CausalProfiler {
                 if (now >= experiment.endTime) {
                   val result = experiment.toResult()
                   if (iteration >= iterations) {
-                    unsafe { implicit u =>
+                    unsafe { implicit u: Unsafe =>
                       resultPromise.unsafe.done(ZIO.succeed(ProfilingResult(result :: results)))
                     }
                     samplingState = SamplingState.Done
