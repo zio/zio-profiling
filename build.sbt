@@ -65,7 +65,6 @@ lazy val docs = project
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     mdocIn                                     := (LocalRootProject / baseDirectory).value / "docs",
-    mdocOut                                    := (LocalRootProject / baseDirectory).value / "website" / "docs",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioProfiling),
     ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
