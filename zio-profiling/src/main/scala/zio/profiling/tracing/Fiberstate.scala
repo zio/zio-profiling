@@ -18,7 +18,7 @@ final private class FiberState private (
 
 }
 
-private object FiberState {
+private[tracing] object FiberState {
   def makeFor(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): FiberState = {
     val state = new FiberState(
       CostCenter.getCurrent(fiber),

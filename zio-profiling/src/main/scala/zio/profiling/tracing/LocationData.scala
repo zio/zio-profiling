@@ -15,7 +15,7 @@ final private class LocationData(
   }
 }
 
-private object LocationData {
+private[tracing] object LocationData {
   def fromSingleCall(
     duration: Long
   ): LocationData =

@@ -35,7 +35,7 @@ final private class FiberState private (
 
 }
 
-private object FiberState {
+private[causal] object FiberState {
 
   def makeFor(fiber: Fiber.Runtime[_, _], inheritedDelay: Long)(implicit unsafe: Unsafe): FiberState = {
     val state = new FiberState(

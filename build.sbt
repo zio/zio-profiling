@@ -50,6 +50,9 @@ lazy val zioProfiling = project
 lazy val zioProfilingExamples = project
   .in(file("zio-profiling-examples"))
   .settings(stdSettings("zio-profiling-examples"))
+  .settings(
+    publish / skip := true
+  )
   .dependsOn(zioProfiling)
 
 lazy val docs = project

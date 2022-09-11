@@ -20,6 +20,6 @@ private trait Tracker {
   def progressPoint(name: String): Unit
 }
 
-private object Tracker {
+private[causal] object Tracker {
   val noop: Tracker = _ => ()
 }
