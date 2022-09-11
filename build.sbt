@@ -39,9 +39,10 @@ lazy val zioProfiling = project
   .settings(stdSettings("zio-profiling"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % Test,
-      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
+      "dev.zio"                %% "zio"                     % zioVersion,
+      "org.scala-lang.modules" %% "scala-collection-compat" % collectionCompatVersion,
+      "dev.zio"                %% "zio-test"                % zioVersion % Test,
+      "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
