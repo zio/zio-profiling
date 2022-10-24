@@ -5,8 +5,8 @@ import zio.{URIO, _}
 
 object CausalProfilerToyExample2 extends ZIOAppDefault {
   def run: URIO[Any, ExitCode] =
-    CausalProfiler
-      .profile(ProfilerConfig.Default.copy(iterations = 100))(prog.forever)
+    CausalProfiler(iterations = 100)
+      .profile(prog.forever)
       .flatMap(_.writeToFile("profile.coz"))
       .exitCode
 

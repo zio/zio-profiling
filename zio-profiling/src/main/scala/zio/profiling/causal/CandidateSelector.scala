@@ -29,6 +29,6 @@ object CandidateSelector {
       if (cc.isDescendantOf(scope)) Some(cc) else None
     }
 
-  val Default: CandidateSelector =
+  val default: CandidateSelector =
     below(CostCenter.Root)
 }

@@ -21,293 +21,301 @@ import zio._
 
 import java.util.concurrent.ConcurrentHashMap
 
-object CausalProfiler {
-  final class ProfilePartiallyApplied(config: ProfilerConfig) {
-    def apply[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
-      ZIO.scoped[R] {
-        supervisor(config).flatMap { prof =>
-          zio
-            .withRuntimeFlags(RuntimeFlags.enable(RuntimeFlag.OpSupervision))
-            .supervised(prof)
-            .fork
-            .zipRight(prof.value)
-        }
+final case class CausalProfiler(
+  iterations: Int = 10,
+  candidateSelector: CandidateSelector = CandidateSelector.default,
+  reportProgress: Boolean = true,
+  samplingPeriod: Duration = 20.millis,
+  minExperimentDuration: Duration = 1.second,
+  experimentTargetSamples: Int = 30,
+  warmUpPeriod: Duration = 30.seconds,
+  coolOffPeriod: Duration = 2.seconds,
+  zeroSpeedupWeight: Int = 10,
+  maxConsideredSpeedUp: Int = 100,
+  sleepPrecision: Duration = 10.millis
+) {
+
+  private val sleepPrecisionNanos        = sleepPrecision.toNanos()
+  private val warmUpPeriodNanos          = warmUpPeriod.toNanos()
+  private val coolOffPeriodNanos         = coolOffPeriod.toNanos()
+  private val samplingPeriodNanos        = samplingPeriod.toNanos()
+  private val minExperimentDurationNanos = minExperimentDuration.toNanos()
+
+  def profile[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
+    ZIO.scoped[R] {
+      supervisor.flatMap { prof =>
+        zio
+          .withRuntimeFlags(RuntimeFlags.enable(RuntimeFlag.OpSupervision))
+          .supervised(prof)
+          .fork
+          .zipRight(prof.value)
       }
-  }
+    }
 
-  def profile(config: ProfilerConfig): ProfilePartiallyApplied =
-    new ProfilePartiallyApplied(config)
-
-  def supervisor(config: ProfilerConfig)(implicit trace: Trace): ZIO[Scope, Nothing, Supervisor[ProfilingResult]] =
+  def supervisor(implicit trace: Trace): ZIO[Scope, Nothing, Supervisor[ProfilingResult]] =
     ZIO.withFiberRuntime[Scope, Nothing, Supervisor[ProfilingResult]] { case (runtime, _) =>
-      import config._
+      ZIO.suspendSucceed {
 
-      val sleepPrecisionNanos        = sleepPrecision.toNanos()
-      val warmUpPeriodNanos          = warmUpPeriod.toNanos()
-      val coolOffPeriodNanos         = coolOffPeriod.toNanos()
-      val samplingPeriodNanos        = samplingPeriod.toNanos()
-      val minExperimentDurationNanos = minExperimentDuration.toNanos()
+        val startTime = java.lang.System.nanoTime()
 
-      val startTime = java.lang.System.nanoTime()
+        val fibers = new ConcurrentHashMap[FiberId, FiberState]()
 
-      val fibers = new ConcurrentHashMap[FiberId, FiberState]()
+        @volatile
+        var samplingState: SamplingState = SamplingState.Warmup(startTime + warmUpPeriodNanos)
 
-      @volatile
-      var samplingState: SamplingState = SamplingState.Warmup(startTime + warmUpPeriodNanos)
+        @volatile
+        var globalDelay = 0L
 
-      @volatile
-      var globalDelay = 0L
-
-      def logMessage(msg: => String) =
-        unsafe { implicit u: Unsafe =>
-          runtime.log(() => msg, Cause.empty, ZIO.someInfo, trace)
-        }
-
-      def delayFiber(state: FiberState): Unit =
-        samplingState match {
-          case SamplingState.Done =>
-            ()
-          case SamplingState.ExperimentInProgress(_, _, _) =>
-            val delay = globalDelay - state.localDelay.get()
-            if (delay > 0) {
-              val actualSleep = sleepNanos(delay)
-              state.localDelay.addAndGet(actualSleep)
-              ()
-            }
-          case _ =>
-            state.localDelay.set(globalDelay)
-        }
-
-      def selectSpeedUp(): Float =
-        if (scala.util.Random.nextInt(zeroSpeedupWeight) == 0) 0L
-        else (scala.util.Random.nextInt(maxConsideredSpeedUp) + 1).toFloat / 100
-
-      // http://andy-malakov.blogspot.com/2010/06/alternative-to-threadsleep.html
-      def sleepNanos(nanoDuration: Long): Long = {
-        val end      = java.lang.System.nanoTime() + nanoDuration
-        var timeLeft = nanoDuration
-
-        while (timeLeft > 0) {
-          if (Thread.interrupted()) {
-            throw new InterruptedException()
-          } else if (timeLeft > sleepPrecisionNanos) {
-            Thread.sleep((timeLeft - sleepPrecisionNanos).nanos.toMillis);
-          } else {
-            // busy spin
+        def logMessage(msg: => String) =
+          unsafe { implicit u: Unsafe =>
+            runtime.log(() => msg, Cause.empty, ZIO.someInfo, trace)
           }
-          timeLeft = end - java.lang.System.nanoTime()
-        }
-        nanoDuration - timeLeft
-      }
 
-      val tracker = new Tracker {
-        def progressPoint(name: String): Unit =
+        def delayFiber(state: FiberState): Unit =
           samplingState match {
-            case SamplingState.ExperimentInProgress(experiment, _, _) =>
-              experiment.addProgressPointMeasurement(name)
-            case _ =>
+            case SamplingState.Done =>
               ()
+            case SamplingState.ExperimentInProgress(_, _, _) =>
+              val delay = globalDelay - state.localDelay.get()
+              if (delay > 0) {
+                val actualSleep = sleepNanos(delay)
+                state.localDelay.addAndGet(actualSleep)
+                ()
+              }
+            case _ =>
+              state.localDelay.set(globalDelay)
           }
-      }
 
-      GlobalTrackerRef.locallyScoped(tracker).zipRight {
-        Promise.make[Nothing, ProfilingResult].flatMap { resultPromise =>
-          val runSamplingStep = ZIO.succeed {
-            val now = java.lang.System.nanoTime()
+        val tracker = new Tracker {
+          def progressPoint(name: String): Unit =
             samplingState match {
-              case SamplingState.Warmup(until) =>
-                if (now >= until) {
-                  samplingState = SamplingState.ExperimentPending(1, Nil)
-                }
+              case SamplingState.ExperimentInProgress(experiment, _, _) =>
+                experiment.addProgressPointMeasurement(name)
+              case _ =>
+                ()
+            }
+        }
 
-              case SamplingState.ExperimentPending(iteration, results) =>
-                var experiment = null.asInstanceOf[Experiment]
-                val iterator   = fibers.values().iterator()
+        GlobalTrackerRef.locallyScoped(tracker).zipRight {
+          Promise.make[Nothing, ProfilingResult].flatMap { resultPromise =>
+            val runSamplingStep = ZIO.succeed {
+              val now = java.lang.System.nanoTime()
+              samplingState match {
+                case SamplingState.Warmup(until) =>
+                  if (now >= until) {
+                    samplingState = SamplingState.ExperimentPending(1, Nil)
+                  }
 
-                while (experiment == null && iterator.hasNext()) {
-                  val fiber = iterator.next()
-                  if (fiber.running) {
-                    candidateSelector.select(fiber.costCenter).foreach { candidate =>
-                      results match {
-                        case previous :: _ =>
-                          val minDelta =
-                            if (previous.throughputData.nonEmpty) previous.throughputData.map(_.delta).min else 0
-                          val nextDuration =
-                            if (minDelta < experimentTargetSamples) {
-                              previous.duration * 2
-                            } else if (
-                              minDelta >= experimentTargetSamples * 2 && previous.duration >= minExperimentDurationNanos * 2
-                            ) {
-                              previous.duration / 2
-                            } else {
-                              previous.duration
-                            }
-                          experiment = new Experiment(
-                            candidate,
-                            now,
-                            nextDuration,
-                            selectSpeedUp(),
-                            new ConcurrentHashMap[String, Int]()
-                          )
-                        case Nil =>
-                          experiment = new Experiment(
-                            candidate,
-                            now,
-                            minExperimentDurationNanos,
-                            selectSpeedUp(),
-                            new ConcurrentHashMap[String, Int]()
-                          )
+                case SamplingState.ExperimentPending(iteration, results) =>
+                  var experiment = null.asInstanceOf[Experiment]
+                  val iterator   = fibers.values().iterator()
+
+                  while (experiment == null && iterator.hasNext()) {
+                    val fiber = iterator.next()
+                    if (fiber.running) {
+                      candidateSelector.select(fiber.costCenter).foreach { candidate =>
+                        results match {
+                          case previous :: _ =>
+                            val minDelta =
+                              if (previous.throughputData.nonEmpty) previous.throughputData.map(_.delta).min else 0
+                            val nextDuration =
+                              if (minDelta < experimentTargetSamples) {
+                                previous.duration * 2
+                              } else if (
+                                minDelta >= experimentTargetSamples * 2 && previous.duration >= minExperimentDurationNanos * 2
+                              ) {
+                                previous.duration / 2
+                              } else {
+                                previous.duration
+                              }
+                            experiment = new Experiment(
+                              candidate,
+                              now,
+                              nextDuration,
+                              selectSpeedUp(),
+                              new ConcurrentHashMap[String, Int]()
+                            )
+                          case Nil =>
+                            experiment = new Experiment(
+                              candidate,
+                              now,
+                              minExperimentDurationNanos,
+                              selectSpeedUp(),
+                              new ConcurrentHashMap[String, Int]()
+                            )
+                        }
                       }
                     }
                   }
-                }
-                if (experiment != null) {
-                  samplingState = SamplingState.ExperimentInProgress(experiment, iteration, results)
-                  logMessage(
-                    s"Starting experiment $iteration (costCenter: ${experiment.candidate.render}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration}ns)"
-                  )
-                }
+                  if (experiment != null) {
+                    samplingState = SamplingState.ExperimentInProgress(experiment, iteration, results)
+                    logMessage(
+                      s"Starting experiment $iteration (costCenter: ${experiment.candidate.render}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration}ns)"
+                    )
+                  }
 
-              case SamplingState.ExperimentInProgress(experiment, iteration, results) =>
-                if (now >= experiment.endTime) {
-                  val result = experiment.toResult()
-                  if (iteration >= iterations) {
-                    unsafe { implicit u: Unsafe =>
-                      resultPromise.unsafe.done(ZIO.succeed(ProfilingResult(result :: results)))
+                case SamplingState.ExperimentInProgress(experiment, iteration, results) =>
+                  if (now >= experiment.endTime) {
+                    val result = experiment.toResult()
+                    if (iteration >= iterations) {
+                      unsafe { implicit u: Unsafe =>
+                        resultPromise.unsafe.done(ZIO.succeed(ProfilingResult(result :: results)))
+                      }
+                      samplingState = SamplingState.Done
+                      logMessage(s"Profiling done. Total duration: ${now - startTime}ns")
+                    } else {
+                      samplingState = SamplingState.CoolOff(now + coolOffPeriodNanos, iteration, result :: results)
                     }
-                    samplingState = SamplingState.Done
-                    logMessage(s"Profiling done. Total duration: ${now - startTime}ns")
                   } else {
-                    samplingState = SamplingState.CoolOff(now + coolOffPeriodNanos, iteration, result :: results)
-                  }
-                } else {
-                  val iterator = fibers.values.iterator()
-                  while (iterator.hasNext()) {
-                    val fiber = iterator.next()
-                    if (fiber.running && fiber.costCenter.isDescendantOf(experiment.candidate)) {
-                      val delayAmount = (experiment.speedUp * samplingPeriodNanos).toLong
-                      fiber.localDelay.addAndGet(delayAmount)
-                      globalDelay += delayAmount
-                      experiment.trackDelay(delayAmount)
+                    val iterator = fibers.values.iterator()
+                    while (iterator.hasNext()) {
+                      val fiber = iterator.next()
+                      if (fiber.running && fiber.costCenter.isDescendantOf(experiment.candidate)) {
+                        val delayAmount = (experiment.speedUp * samplingPeriodNanos).toLong
+                        fiber.localDelay.addAndGet(delayAmount)
+                        globalDelay += delayAmount
+                        experiment.trackDelay(delayAmount)
+                      }
                     }
                   }
-                }
 
-              case SamplingState.CoolOff(until, iteration, results) =>
-                if (now >= until) {
-                  samplingState = SamplingState.ExperimentPending(iteration + 1, results)
-                }
+                case SamplingState.CoolOff(until, iteration, results) =>
+                  if (now >= until) {
+                    samplingState = SamplingState.ExperimentPending(iteration + 1, results)
+                  }
 
-              case SamplingState.Done =>
-                () // nothing to do
+                case SamplingState.Done =>
+                  () // nothing to do
+              }
             }
-          }
 
-          runSamplingStep.repeat(Schedule.spaced(samplingPeriod)).race(resultPromise.await).fork.as {
-            new Supervisor[ProfilingResult] {
+            runSamplingStep.repeat(Schedule.spaced(samplingPeriod)).race(resultPromise.await).fork.as {
+              new Supervisor[ProfilingResult] {
 
-              // first event in fiber lifecycle. No previous events to consider.
-              override def onStart[R, E, A](
-                environment: ZEnvironment[R],
-                effect: ZIO[R, E, A],
-                parent: Option[Fiber.Runtime[Any, Any]],
-                fiber: Fiber.Runtime[E, A]
-              )(implicit unsafe: zio.Unsafe): Unit = {
-                val parentDelay =
-                  parent.flatMap(f => Option(fibers.get(f.id)).map(_.localDelay.get())).getOrElse(globalDelay)
+                // first event in fiber lifecycle. No previous events to consider.
+                override def onStart[R, E, A](
+                  environment: ZEnvironment[R],
+                  effect: ZIO[R, E, A],
+                  parent: Option[Fiber.Runtime[Any, Any]],
+                  fiber: Fiber.Runtime[E, A]
+                )(implicit unsafe: zio.Unsafe): Unit = {
+                  val parentDelay =
+                    parent.flatMap(f => Option(fibers.get(f.id)).map(_.localDelay.get())).getOrElse(globalDelay)
 
-                fibers.put(fiber.id, FiberState.makeFor(fiber, parentDelay))
-                ()
-              }
-
-              // previous events could be {onStart, onResume, onEffect}
-              override def onEnd[R, E, A](
-                value: Exit[E, A],
-                fiber: Fiber.Runtime[E, A]
-              )(implicit unsafe: zio.Unsafe): Unit = {
-                val state = fibers.get(fiber.id)
-                if (state ne null) {
-                  state.running = false
-                  // no need to refresh tag as we are shutting down
-                  if (!value.isInterrupted) {
-                    delayFiber(state)
-                  }
-                  fibers.remove(fiber.id)
+                  fibers.put(fiber.id, FiberState.makeFor(fiber, parentDelay))
                   ()
                 }
-              }
 
-              // previous events could be {onStart, onResume, onEffect}
-              override def onEffect[E, A](fiber: Fiber.Runtime[E, A], effect: ZIO[_, _, _])(implicit
-                unsafe: zio.Unsafe
-              ): Unit = {
-                var state      = fibers.get(fiber.id)
-                var freshState = false
-
-                if (state == null) {
-                  state = FiberState.makeFor(fiber, globalDelay)
-                  fibers.put(fiber.id, state)
-                  freshState = true
-                } else if (state.lastEffectWasStateful) {
-                  state.refreshCostCenter(fiber)
-                  state.lastEffectWasStateful = false
-                }
-
-                effect match {
-                  case ZIO.Stateful(_, _) =>
-                    state.lastEffectWasStateful = true
-                  case ZIO.Sync(_, _) =>
-                    if (!freshState) {
-                      state.running = false
+                // previous events could be {onStart, onResume, onEffect}
+                override def onEnd[R, E, A](
+                  value: Exit[E, A],
+                  fiber: Fiber.Runtime[E, A]
+                )(implicit unsafe: zio.Unsafe): Unit = {
+                  val state = fibers.get(fiber.id)
+                  if (state ne null) {
+                    state.running = false
+                    // no need to refresh tag as we are shutting down
+                    if (!value.isInterrupted) {
                       delayFiber(state)
-                      state.running = true
                     }
-                  case ZIO.Async(_, _, _) =>
-                    state.preAsyncGlobalDelay = globalDelay
-                    state.inAsync = true
-                  case _ =>
+                    fibers.remove(fiber.id)
                     ()
+                  }
                 }
-              }
 
-              // previous events could be {onStart, onResume, onEffect}
-              override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-                val state = fibers.get(fiber.id)
-                if (state ne null) {
-                  if (state.lastEffectWasStateful) {
-                    state.lastEffectWasStateful = false
+                // previous events could be {onStart, onResume, onEffect}
+                override def onEffect[E, A](fiber: Fiber.Runtime[E, A], effect: ZIO[_, _, _])(implicit
+                  unsafe: zio.Unsafe
+                ): Unit = {
+                  var state      = fibers.get(fiber.id)
+                  var freshState = false
+
+                  if (state == null) {
+                    state = FiberState.makeFor(fiber, globalDelay)
+                    fibers.put(fiber.id, state)
+                    freshState = true
+                  } else if (state.lastEffectWasStateful) {
                     state.refreshCostCenter(fiber)
+                    state.lastEffectWasStateful = false
                   }
-                  state.running = false
-                } else {
-                  val newState = FiberState.makeFor(fiber, globalDelay)
-                  newState.running = false
-                  fibers.put(fiber.id, newState)
-                  ()
-                }
-              }
 
-              // previous event can only be onSuspend
-              override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-                val state = fibers.get(fiber.id)
-                if (state ne null) {
-                  state.running = true
-                  if (state.inAsync) {
-                    state.localDelay.addAndGet(globalDelay - state.preAsyncGlobalDelay)
-                    state.preAsyncGlobalDelay = 0
-                    state.inAsync = false
+                  effect match {
+                    case ZIO.Stateful(_, _) =>
+                      state.lastEffectWasStateful = true
+                    case ZIO.Sync(_, _) =>
+                      if (!freshState) {
+                        state.running = false
+                        delayFiber(state)
+                        state.running = true
+                      }
+                    case ZIO.Async(_, _, _) =>
+                      state.preAsyncGlobalDelay = globalDelay
+                      state.inAsync = true
+                    case _ =>
+                      ()
                   }
-                } else {
-                  fibers.put(fiber.id, FiberState.makeFor(fiber, globalDelay))
-                  ()
                 }
-              }
 
-              def value(implicit trace: Trace): UIO[ProfilingResult] = resultPromise.await
+                // previous events could be {onStart, onResume, onEffect}
+                override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+                  val state = fibers.get(fiber.id)
+                  if (state ne null) {
+                    if (state.lastEffectWasStateful) {
+                      state.lastEffectWasStateful = false
+                      state.refreshCostCenter(fiber)
+                    }
+                    state.running = false
+                  } else {
+                    val newState = FiberState.makeFor(fiber, globalDelay)
+                    newState.running = false
+                    fibers.put(fiber.id, newState)
+                    ()
+                  }
+                }
+
+                // previous event can only be onSuspend
+                override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+                  val state = fibers.get(fiber.id)
+                  if (state ne null) {
+                    state.running = true
+                    if (state.inAsync) {
+                      state.localDelay.addAndGet(globalDelay - state.preAsyncGlobalDelay)
+                      state.preAsyncGlobalDelay = 0
+                      state.inAsync = false
+                    }
+                  } else {
+                    fibers.put(fiber.id, FiberState.makeFor(fiber, globalDelay))
+                    ()
+                  }
+                }
+
+                def value(implicit trace: Trace): UIO[ProfilingResult] = resultPromise.await
+              }
             }
           }
         }
       }
-
     }
+
+  private def selectSpeedUp(): Float =
+    if (scala.util.Random.nextInt(zeroSpeedupWeight) == 0) 0L
+    else (scala.util.Random.nextInt(maxConsideredSpeedUp) + 1).toFloat / 100
+
+  // http://andy-malakov.blogspot.com/2010/06/alternative-to-threadsleep.html
+  private def sleepNanos(nanoDuration: Long): Long = {
+    val end      = java.lang.System.nanoTime() + nanoDuration
+    var timeLeft = nanoDuration
+
+    while (timeLeft > 0) {
+      if (Thread.interrupted()) {
+        throw new InterruptedException()
+      } else if (timeLeft > sleepPrecisionNanos) {
+        Thread.sleep((timeLeft - sleepPrecisionNanos).nanos.toMillis);
+      } else {
+        // busy spin
+      }
+      timeLeft = end - java.lang.System.nanoTime()
+    }
+    nanoDuration - timeLeft
+  }
 }

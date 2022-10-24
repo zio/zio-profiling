@@ -1,7 +1,7 @@
 package zio.profiling.examples
 
+import zio._
 import zio.profiling.tracing._
-import zio.{URIO, _}
 
 object TracingProfilerProducerConsumerExample extends ZIOAppDefault {
 
@@ -15,23 +15,23 @@ object TracingProfilerProducerConsumerExample extends ZIOAppDefault {
       def producer =
         queue
           .offer(())
-          .repeatN((Items / ProducerCount) - 1) <# "producer"
+          .repeatN((Items / ProducerCount) - 1)
 
       def consumer =
         queue.take
-          .repeatN((Items / ConsumerCount) - 1) <# "consumer"
+          .repeatN((Items / ConsumerCount) - 1)
 
       for {
         iteration <- iterationRef.updateAndGet(_ + 1)
         _         <- ZIO.logInfo(s"Iteration $iteration")
-        producers <- ZIO.forkAll(List.fill(ProducerCount)(producer))
-        consumers <- ZIO.forkAll(List.fill(ConsumerCount)(consumer))
+        producers <- ZIO.forkAll(List.fill(ProducerCount)(producer)) <# "producer"
+        consumers <- ZIO.forkAll(List.fill(ConsumerCount)(consumer)) <# "consumer"
         _         <- producers.join *> consumers.join
       } yield ()
     }
 
     TracingProfiler
-      .profile(Ref.make(0).flatMap(program(_).repeatN(100)))
+      .profile(Ref.make(0).flatMap(program(_).repeatN(99)))
       .flatMap(_.stackCollapseToFile("profile.folded"))
       .exitCode
   }

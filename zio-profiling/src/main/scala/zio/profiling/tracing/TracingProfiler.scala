@@ -30,6 +30,7 @@ object TracingProfiler {
         ()
       }
     }
+
     new Supervisor[ProfilingResult] {
       def value(implicit trace: zio.Trace): UIO[ProfilingResult] =
         ZIO.succeed {

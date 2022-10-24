@@ -26,10 +26,8 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
       } yield ()
     }
 
-    CausalProfiler
-      .profile(ProfilerConfig.Default.copy(iterations = 200)) {
-        program.forever
-      }
+    CausalProfiler(iterations = 200)
+      .profile(program.forever)
       .flatMap(_.writeToFile("profile.coz"))
       .exitCode
   }
