@@ -52,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @param maxConsideredSpeedUp
  *   maximum speedup percentage that will be selected for experiments. Values over 100 do not have any practical use.
  * @param sleepPrecision
- *   estimated precision of [[Thread.sleep]]. The profiler will busy spin once it enters this proximity to the target
+ *   estimated precision of `Thread.sleep`. The profiler will busy spin once it enters this proximity to the target
  *   time in order to increase accuraccy.
  */
 final case class CausalProfiler(
