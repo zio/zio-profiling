@@ -28,11 +28,7 @@ lazy val root = project
   .settings(
     publish / skip := true
   )
-  .aggregate(
-    zioProfiling,
-    zioProfilingExamples,
-    docs
-  )
+  .aggregate(zioProfiling, examples, docs)
 
 lazy val zioProfiling = project
   .in(file("zio-profiling"))
@@ -47,9 +43,9 @@ lazy val zioProfiling = project
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
 
-lazy val zioProfilingExamples = project
-  .in(file("zio-profiling-examples"))
-  .settings(stdSettings("zio-profiling-examples"))
+lazy val examples = project
+  .in(file("examples"))
+  .settings(stdSettings("examples"))
   .settings(
     publish / skip := true
   )
@@ -58,7 +54,6 @@ lazy val zioProfilingExamples = project
 lazy val docs = project
   .in(file("zio-profiling-docs"))
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
-  .settings(stdSettings("zio-profiling"))
   .settings(
     publish / skip := true,
     moduleName     := "zio-profiling-docs",

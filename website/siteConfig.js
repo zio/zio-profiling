@@ -31,8 +31,9 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    { doc: 'about/about_index', label: 'About' },
     { doc: 'overview/overview_index', label: 'Overview' },
+    { doc: 'resources/resources_index', label: 'Resources' },
+    { doc: 'about/about_index', label: 'About' }
   ],
 
   // by default Docusaurus combines CSS files in a way that doesn't play nicely with Scaladoc

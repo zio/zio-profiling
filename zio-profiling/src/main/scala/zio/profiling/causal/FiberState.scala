@@ -31,16 +31,16 @@ final private class FiberState private (
 ) {
 
   def refreshCostCenter(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): Unit =
-    costCenter = CostCenter.getCurrent(fiber)
+    costCenter = CostCenter.getCurrentUnsafe(fiber)
 
 }
 
-private[causal] object FiberState {
+private object FiberState {
 
   def makeFor(fiber: Fiber.Runtime[_, _], inheritedDelay: Long)(implicit unsafe: Unsafe): FiberState = {
     val state = new FiberState(
       new AtomicLong(inheritedDelay),
-      CostCenter.getCurrent(fiber),
+      CostCenter.getCurrentUnsafe(fiber),
       true,
       false,
       false,

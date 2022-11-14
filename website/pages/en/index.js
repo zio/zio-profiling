@@ -64,6 +64,7 @@
                      <ProjectTitle siteConfig={siteConfig}/>
                      <PromoSection>
                          <Button href={docUrl('overview/overview_index')}>Overview</Button>
+                         <Button href={docUrl('resources/resources_index')}>Resources</Button>
                          <Button href="https://github.com/zio/zio-profiling" target="_blank">GitHub</Button>
                      </PromoSection>
                  </div>
@@ -90,24 +91,19 @@
              </Container>
          );
 
-         const FeatureCallout = () => (
-             <div className="productShowcaseSection paddingBottom" style={{textAlign: "center"}}>
-                 <h2>Welcome to ZIO Profiling</h2>
-                 <MarkdownBlock>
-                     Profilers for ZIO applications.
-                 </MarkdownBlock>
-             </div>
-         );
-
          const Features = () => (
              <Block layout="fourColumn">
                  {[
                      {
-                         content: 'Use the full power of the Scala compiler to catch bugs at compile time',
-                         title: 'Type-safe'
+                         content: 'Visualize performance with flamegraphs and other visualizations',
+                         title: 'Understand your code'
                      },
                      {
-                         content: 'Built from scratch using ZIO',
+                        content: 'Find bottlenecks in your application using causal profiling',
+                        title: 'Causal Profiling'
+                     },
+                     {
+                         content: 'Built from scratch to support profiling of functional effects',
                          title: 'ZIO native'
                      }
                  ]}
@@ -119,7 +115,6 @@
                  <HomeSplash siteConfig={siteConfig} language={language}/>
                  <div className="mainContainer">
                      <Features/>
-                     <FeatureCallout/>
                  </div>
              </div>
          );

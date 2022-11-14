@@ -18,17 +18,29 @@ package zio.profiling.causal
 
 import zio.profiling.CostCenter
 
+/**
+ * A `CandidateSelector` is used to decide on a target for optimization based on what code the causal profiler
+ * encounters. Whenever a new experiment is about to begin a recently executed line is selected and fed to the selector.
+ * The resulting costcenter will be the target of the next experiment.
+ */
 final case class CandidateSelector(select: CostCenter => Option[CostCenter])
 
 object CandidateSelector {
-  def below(scope: CostCenter): CandidateSelector =
-    CandidateSelector(scope.getOneLevelDownFrom)
 
+  /**
+   * Select all costcenters directly nested under the provided costcenter for optimization.
+   */
+  def below(scope: CostCenter): CandidateSelector =
+    CandidateSelector(_.getOneLevelDownFrom(scope))
+
+  /**
+   * Select all costcenters directly or transitively nested under the provided costcenter for optimization.
+   */
   def belowRecursive(scope: CostCenter): CandidateSelector =
     CandidateSelector { cc =>
       if (cc.isDescendantOf(scope)) Some(cc) else None
     }
 
-  val default: CandidateSelector =
+  final val default: CandidateSelector =
     below(CostCenter.Root)
 }

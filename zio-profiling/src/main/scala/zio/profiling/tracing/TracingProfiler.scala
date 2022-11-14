@@ -9,6 +9,9 @@ import scala.jdk.CollectionConverters._
 
 object TracingProfiler {
 
+  /**
+   * Profile a program and get the resulting profile data.
+   */
   def profile[R, E](zio: ZIO[R, E, Any]): ZIO[R, E, ProfilingResult] =
     supervisor.flatMap { prof =>
       zio
@@ -17,6 +20,10 @@ object TracingProfiler {
         .zipRight(prof.value)
     }
 
+  /**
+   * Create a supervisor that can be used to profile a zio program. For profiling to work correctly, OpSupervision must
+   * be enabled for the effect.
+   */
   def supervisor(implicit trace: Trace): UIO[Supervisor[ProfilingResult]] = ZIO.succeed {
     val fibers       = new ConcurrentHashMap[FiberId, FiberState]()
     val locationData = new ConcurrentHashMap[TaggedLocation, LocationData]()
@@ -37,8 +44,8 @@ object TracingProfiler {
           val entries = locationData.entrySet().asScala.map { entry =>
             val data          = entry.getValue()
             val numberOfCalls = data.numberOfCalls.get()
-            val totalTime     = data.totalTime.get()
-            val maxTime       = data.maxTime.get()
+            val totalTime     = data.totalTimeNanos.get()
+            val maxTime       = data.maxTimeNanos.get()
             ProfilingResult.Entry(
               entry.getKey,
               numberOfCalls,
@@ -62,7 +69,7 @@ object TracingProfiler {
         fiber: Fiber.Runtime[E, A]
       )(implicit unsafe: Unsafe): Unit = {
         val state = fibers.get(fiber.id)
-        if ((state ne null) && (state.location ne null)) {
+        if ((state ne null) && (state.trace ne null)) {
           recordCall(state.taggedLocation, nanoTime() - state.timestamp)
           fibers.remove(fiber.id)
           ()
@@ -71,9 +78,9 @@ object TracingProfiler {
 
       override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
         val state = fibers.get(fiber.id)
-        if ((state ne null) && (state.location ne null)) {
+        if ((state ne null) && (state.trace ne null)) {
           recordCall(state.taggedLocation, nanoTime() - state.timestamp)
-          state.location = null.asInstanceOf[Trace]
+          state.trace = null.asInstanceOf[Trace]
           ()
         }
       }
@@ -88,7 +95,7 @@ object TracingProfiler {
           state = FiberState.makeFor(fiber)
           fibers.put(fiber.id, state)
           ()
-        } else if (state.location ne null) {
+        } else if (state.trace ne null) {
           recordCall(state.taggedLocation, nanoTime() - state.timestamp)
           ()
         }
@@ -104,7 +111,7 @@ object TracingProfiler {
           case _ => ()
         }
 
-        state.location = effect.trace
+        state.trace = effect.trace
         state.timestamp = nanoTime()
       }
     }

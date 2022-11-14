@@ -4,20 +4,18 @@ import java.util.concurrent.atomic.AtomicLong
 
 final private class LocationData(
   val numberOfCalls: AtomicLong,
-  val totalTime: AtomicLong,
-  val maxTime: AtomicLong
+  val totalTimeNanos: AtomicLong,
+  val maxTimeNanos: AtomicLong
 ) {
   def recordCall(duration: Long): Unit = {
     numberOfCalls.incrementAndGet()
-    totalTime.addAndGet(duration)
-    maxTime.accumulateAndGet(duration, Math.max)
+    totalTimeNanos.addAndGet(duration)
+    maxTimeNanos.accumulateAndGet(duration, Math.max)
     ()
   }
 }
 
-private[tracing] object LocationData {
-  def fromSingleCall(
-    duration: Long
-  ): LocationData =
+private object LocationData {
+  def fromSingleCall(duration: Long): LocationData =
     new LocationData(new AtomicLong(1), new AtomicLong(duration), new AtomicLong(duration))
 }

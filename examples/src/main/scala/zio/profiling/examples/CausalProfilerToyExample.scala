@@ -6,7 +6,7 @@ import zio.{URIO, _}
 object CausalProfilerToyExample extends ZIOAppDefault {
 
   def run: URIO[Any, ExitCode] =
-    CausalProfiler(iterations = 100, candidateSelector = Root / "program" / *, reportProgress = true).profile {
+    CausalProfiler(iterations = 100, candidateSelector = Root / "program" / *).profile {
       val io = for {
         _    <- progressPoint("iteration start")
         short = ZIO.blocking(ZIO.succeed(Thread.sleep(40))) <# "short"
@@ -15,6 +15,6 @@ object CausalProfilerToyExample extends ZIOAppDefault {
       } yield ()
       io.forever <# "program"
     }
-      .flatMap(_.writeToFile("profile.coz"))
+      .flatMap(_.renderToFile("profile.coz"))
       .exitCode
 }

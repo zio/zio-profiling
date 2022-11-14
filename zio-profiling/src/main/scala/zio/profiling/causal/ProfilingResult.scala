@@ -22,10 +22,16 @@ import java.nio.file.{Files, Paths}
 
 final case class ProfilingResult(experiments: List[ExperimentResult]) {
 
+  /**
+   * Render the experiment results so they can be uploaded to https://plasma-umass.org/coz/ for visualization.
+   */
   lazy val render: String =
     experiments.flatMap(_.render).mkString("\n")
 
-  def writeToFile(pathString: String): Task[Unit] =
+  /**
+   * Render the experiment results and write them to file.
+   */
+  def renderToFile(pathString: String): Task[Unit] =
     ZIO.attempt {
       val path      = Paths.get(pathString)
       val parentDir = path.getParent()

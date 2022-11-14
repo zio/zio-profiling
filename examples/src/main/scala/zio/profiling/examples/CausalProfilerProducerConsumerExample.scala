@@ -1,14 +1,14 @@
 package zio.profiling.examples
 
+import zio._
 import zio.profiling.causal._
-import zio.{URIO, _}
 
 object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
 
   val Items         = 10000
-  val QueueSize     = 1
-  val ProducerCount = 1
-  val ConsumerCount = 5
+  val QueueSize     = 10
+  val ProducerCount = 4
+  val ConsumerCount = 20
 
   def run: URIO[Any, ExitCode] = {
     val program = Queue.bounded[Unit](QueueSize).flatMap { queue =>
@@ -26,9 +26,9 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
       } yield ()
     }
 
-    CausalProfiler(iterations = 200)
+    CausalProfiler(iterations = 30, experimentTargetSamples = 5)
       .profile(program.forever)
-      .flatMap(_.writeToFile("profile.coz"))
+      .flatMap(_.renderToFile("profile.coz"))
       .exitCode
   }
 }

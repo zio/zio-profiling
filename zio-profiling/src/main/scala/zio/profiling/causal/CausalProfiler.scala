@@ -21,10 +21,43 @@ import zio._
 
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * A causal profiler inspired by https://github.com/plasma-umass/coz, that can be used to instrument code and
+ * automatically figure out which areas should be optimized to increase overall throughput.
+ *
+ * The profiler will periodically select regions of code for optimization and will artifically speed them up by slowing
+ * down all code that runs concurrently with it. It will determine throughput based on the number of times that
+ * [[zio.profiling.causal.progressPoint]] has been invoked during an experiment.
+ *
+ * Only [[zio.profiling.CostCenter]] will be considered for optimization, so make sure to tag the code.
+ *
+ * @param iterations
+ *   the number of experiments to perform
+ * @param candidateSelector
+ *   when a new experiment is about to be performed, this is used to decide on a candidate for optimization
+ * @param samplingPeriod
+ *   how often data about fiber locations gets collected. Lower values increase the overhead of the profiler.
+ * @param minExperimentDuration
+ *   minimum duration of an experiment
+ * @param experimentTargetSamples
+ *   number of times every progress point should be invoked during an experiment. will be used to adjust duration of the
+ *   next experiment.
+ * @param warmUpPeriod
+ *   period of time to delay start of the profiler.
+ * @param coolOffPeriod
+ *   period of time to wait between experiments.
+ * @param zeroSpeedupWeight
+ *   rate of selecting no speedup for the experiment. A `zeroSpeedupWeight` of n means that that every nth experiment
+ *   will have no speedup applied.
+ * @param maxConsideredSpeedUp
+ *   maximum speedup percentage that will be selected for experiments. Values over 100 do not have any practical use.
+ * @param sleepPrecision
+ *   estimated precision of [[Thread.sleep]]. The profiler will busy spin once it enters this proximity to the target
+ *   time in order to increase accuraccy.
+ */
 final case class CausalProfiler(
-  iterations: Int = 10,
+  iterations: Int = 100,
   candidateSelector: CandidateSelector = CandidateSelector.default,
-  reportProgress: Boolean = true,
   samplingPeriod: Duration = 20.millis,
   minExperimentDuration: Duration = 1.second,
   experimentTargetSamples: Int = 30,
@@ -41,17 +74,30 @@ final case class CausalProfiler(
   private val samplingPeriodNanos        = samplingPeriod.toNanos()
   private val minExperimentDurationNanos = minExperimentDuration.toNanos()
 
+  /**
+   * Profile a program and get the result. The program must run long enough for the profiler to complete and will be
+   * interrupted once the profiling is done.
+   */
   def profile[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
     ZIO.scoped[R] {
       supervisor.flatMap { prof =>
         zio
           .withRuntimeFlags(RuntimeFlags.enable(RuntimeFlag.OpSupervision))
           .supervised(prof)
-          .fork
-          .zipRight(prof.value)
+          .raceEither(prof.value)
+          .flatMap(
+            _.fold(
+              _ => ZIO.dieMessage("Program completed before profiler could collect sufficient data"),
+              ZIO.succeedNow(_)
+            )
+          )
       }
     }
 
+  /**
+   * Create a supervisor that can be used to profile a zio program. Getting the `value` of the supervisor will suspend
+   * until profiling to complete. For profiling to work correctly, OpSupervision must be enabled for the effect.
+   */
   def supervisor(implicit trace: Trace): ZIO[Scope, Nothing, Supervisor[ProfilingResult]] =
     ZIO.withFiberRuntime[Scope, Nothing, Supervisor[ProfilingResult]] { case (runtime, _) =>
       ZIO.suspendSucceed {
@@ -95,6 +141,8 @@ final case class CausalProfiler(
                 ()
             }
         }
+
+        logMessage(s"Warming up for ${warmUpPeriodNanos}ns")
 
         GlobalTrackerRef.locallyScoped(tracker).zipRight {
           Promise.make[Nothing, ProfilingResult].flatMap { resultPromise =>
