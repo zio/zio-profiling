@@ -1,6 +1,7 @@
 ---
-id: resources_index
-title: "Resources"
+id: index
+title: "Introduction to ZIO Profiling"
+sidebar_label: "ZIO Profiling"
 ---
 
 ## Talks
