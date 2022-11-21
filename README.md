@@ -8,14 +8,14 @@
 TODO: Tagline
 
 # Documentation
-[zio-profiling Microsite](https://zio.github.io/zio-profiling/)
+[ZIO Profiling Microsite](https://zio.dev/zio-profiling/)
 
 # Contributing
-[Documentation for contributors](https://zio.github.io/zio-profiling/docs/about/about_contributing)
+[Documentation for contributors](https://zio.dev/about/contributing/)
 
 ## Code of Conduct
 
-See the [Code of Conduct](https://zio.github.io/zio-profiling/docs/about/about_coc)
+See the [Code of Conduct](https://zio.dev/about/code-of-conduct)
 
 ## Support
 
