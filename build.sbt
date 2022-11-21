@@ -28,7 +28,7 @@ lazy val root = project
   .settings(
     publish / skip := true
   )
-  .aggregate(zioProfiling, examples, docs)
+  .aggregate(zioProfiling, examples)
 
 lazy val zioProfiling = project
   .in(file("zio-profiling"))
@@ -53,17 +53,11 @@ lazy val examples = project
 
 lazy val docs = project
   .in(file("zio-profiling-docs"))
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .enablePlugins(WebsitePlugin)
   .settings(
     publish / skip := true,
     moduleName     := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
-    scalacOptions -= "-Xfatal-warnings",
-    mdocIn                                     := (LocalRootProject / baseDirectory).value / "docs",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioProfiling),
-    ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
-    cleanFiles += (ScalaUnidoc / unidoc / target).value,
-    docusaurusCreateSite     := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+    scalacOptions -= "-Xfatal-warnings"
   )
   .dependsOn(zioProfiling)
