@@ -23,7 +23,7 @@ import zio.profiling.CostCenter
  * encounters. Whenever a new experiment is about to begin a recently executed line is selected and fed to the selector.
  * The resulting costcenter will be the target of the next experiment.
  */
-final case class CandidateSelector(select: CostCenter => Option[CostCenter])
+final case class CandidateSelector(select: CostCenter => Option[CostCenter]) extends AnyVal
 
 object CandidateSelector {
 
@@ -43,4 +43,7 @@ object CandidateSelector {
 
   final val default: CandidateSelector =
     below(CostCenter.Root)
+
+  final val all: CandidateSelector =
+    belowRecursive(CostCenter.Root)
 }

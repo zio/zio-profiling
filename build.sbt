@@ -28,9 +28,9 @@ lazy val root = project
   .settings(
     publish / skip := true
   )
-  .aggregate(zioProfiling, examples, docs)
+  .aggregate(core, examples, benchmarks, docs)
 
-lazy val zioProfiling = project
+lazy val core = project
   .in(file("zio-profiling"))
   .settings(stdSettings("zio-profiling"))
   .settings(
@@ -49,7 +49,16 @@ lazy val examples = project
   .settings(
     publish / skip := true
   )
-  .dependsOn(zioProfiling)
+  .dependsOn(core)
+
+lazy val benchmarks = project
+  .in(file("benchmarks"))
+  .settings(stdSettings("examples"))
+  .dependsOn(core)
+  .enablePlugins(JmhPlugin)
+  .settings(
+    publish / skip := true
+  )
 
 lazy val docs = project
   .in(file("zio-profiling-docs"))
@@ -60,10 +69,10 @@ lazy val docs = project
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     mdocIn                                     := (LocalRootProject / baseDirectory).value / "docs",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioProfiling),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core),
     ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
     docusaurusCreateSite     := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(zioProfiling)
+  .dependsOn(core)

@@ -48,5 +48,11 @@ object TaggingModule extends TaggingModule {
      */
     def <#(name: String)(implicit trace: Trace): ZIO[R, E, A] =
       withTag(name)(zio)
+
+    /**
+     * A named alias for `<#`.
+     */
+    def tagged(name: String)(implicit trace: Trace): ZIO[R, E, A] =
+      zio <# name
   }
 }
