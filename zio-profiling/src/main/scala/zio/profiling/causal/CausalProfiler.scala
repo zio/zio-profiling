@@ -77,6 +77,8 @@ final case class CausalProfiler(
   /**
    * Profile a program and get the result. The program must run long enough for the profiler to complete and will be
    * interrupted once the profiling is done.
+   *
+   * The profiled program must use the `progressPoint` function to signal progress to the profiler.
    */
   def profile[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
     ZIO.scoped[R] {
@@ -95,6 +97,20 @@ final case class CausalProfiler(
     }
 
   /**
+   * Profile a zio program by running it in a loop and using completion of an iteration as the progress metric.
+   *
+   * {{{
+   * profileIterations {
+   *   val fast = ZIO.succeed(Thread.sleep(20)) <# "fast"
+   *   val slow = ZIO.succeed(Thread.sleep(60)) <# "slow"
+   *   fast <&> slow
+   * }
+   * }}}
+   */
+  def profileIterations[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
+    profile((zio *> progressPoint("iteration done")).forever)
+
+  /**
    * Create a supervisor that can be used to profile a zio program. Getting the `value` of the supervisor will suspend
    * until profiling to complete. For profiling to work correctly, OpSupervision must be enabled for the effect.
    */
@@ -104,7 +120,7 @@ final case class CausalProfiler(
 
         val startTime = java.lang.System.nanoTime()
 
-        val fibers = new ConcurrentHashMap[FiberId, FiberState]()
+        val fibers = new ConcurrentHashMap[Int, FiberState]()
 
         @volatile
         var samplingState: SamplingState = SamplingState.Warmup(startTime + warmUpPeriodNanos)
@@ -164,8 +180,11 @@ final case class CausalProfiler(
                       candidateSelector.select(fiber.costCenter).foreach { candidate =>
                         results match {
                           case previous :: _ =>
-                            val minDelta =
-                              if (previous.throughputData.nonEmpty) previous.throughputData.map(_.delta).min else 0
+                            // with a speedup of 100%, we expect the program to take twice as long
+                            def compensateSpeedup(original: Int): Int = (original * (2 - previous.speedup)).toInt
+
+                            val minDelta = previous.throughputData.map(_.delta).minOption.fold(0)(compensateSpeedup)
+
                             val nextDuration =
                               if (minDelta < experimentTargetSamples) {
                                 previous.duration * 2
@@ -250,7 +269,7 @@ final case class CausalProfiler(
                   val parentDelay =
                     parent.flatMap(f => Option(fibers.get(f.id)).map(_.localDelay.get())).getOrElse(globalDelay)
 
-                  fibers.put(fiber.id, FiberState.makeFor(fiber, parentDelay))
+                  fibers.put(fiber.id.id, FiberState.makeFor(fiber, parentDelay))
                   ()
                 }
 
@@ -259,14 +278,15 @@ final case class CausalProfiler(
                   value: Exit[E, A],
                   fiber: Fiber.Runtime[E, A]
                 )(implicit unsafe: zio.Unsafe): Unit = {
-                  val state = fibers.get(fiber.id)
+                  val id    = fiber.id.id
+                  val state = fibers.get(id)
                   if (state ne null) {
                     state.running = false
                     // no need to refresh tag as we are shutting down
                     if (!value.isInterrupted) {
                       delayFiber(state)
                     }
-                    fibers.remove(fiber.id)
+                    fibers.remove(id)
                     ()
                   }
                 }
@@ -275,12 +295,13 @@ final case class CausalProfiler(
                 override def onEffect[E, A](fiber: Fiber.Runtime[E, A], effect: ZIO[_, _, _])(implicit
                   unsafe: zio.Unsafe
                 ): Unit = {
-                  var state      = fibers.get(fiber.id)
+                  val id         = fiber.id.id
+                  var state      = fibers.get(id)
                   var freshState = false
 
                   if (state == null) {
                     state = FiberState.makeFor(fiber, globalDelay)
-                    fibers.put(fiber.id, state)
+                    fibers.put(id, state)
                     freshState = true
                   } else if (state.lastEffectWasStateful) {
                     state.refreshCostCenter(fiber)
@@ -306,7 +327,8 @@ final case class CausalProfiler(
 
                 // previous events could be {onStart, onResume, onEffect}
                 override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-                  val state = fibers.get(fiber.id)
+                  val id    = fiber.id.id
+                  val state = fibers.get(id)
                   if (state ne null) {
                     if (state.lastEffectWasStateful) {
                       state.lastEffectWasStateful = false
@@ -316,14 +338,15 @@ final case class CausalProfiler(
                   } else {
                     val newState = FiberState.makeFor(fiber, globalDelay)
                     newState.running = false
-                    fibers.put(fiber.id, newState)
+                    fibers.put(id, newState)
                     ()
                   }
                 }
 
                 // previous event can only be onSuspend
                 override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-                  val state = fibers.get(fiber.id)
+                  val id    = fiber.id.id
+                  val state = fibers.get(id)
                   if (state ne null) {
                     state.running = true
                     if (state.inAsync) {
@@ -332,7 +355,7 @@ final case class CausalProfiler(
                       state.inAsync = false
                     }
                   } else {
-                    fibers.put(fiber.id, FiberState.makeFor(fiber, globalDelay))
+                    fibers.put(id, FiberState.makeFor(fiber, globalDelay))
                     ()
                   }
                 }

@@ -14,9 +14,9 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
     _    <- progressPoint("workDone")
   } yield ()
 
-  def doRealWork: ZIO[Any, Nothing, Unit] = ZIO.blocking(ZIO.succeed(Thread.sleep(100)))
+  def doRealWork: ZIO[Any, Nothing, Unit] = ZIO.succeed(Thread.sleep(100))
 
-  def doUselessBackgroundWork: ZIO[Any, Nothing, Unit] = ZIO.blocking(ZIO.succeed(Thread.sleep(30)))
+  def doUselessBackgroundWork: ZIO[Any, Nothing, Unit] = ZIO.succeed(Thread.sleep(30))
 
   def run: URIO[Any, ExitCode] =
     CausalProfiler(iterations = 100)

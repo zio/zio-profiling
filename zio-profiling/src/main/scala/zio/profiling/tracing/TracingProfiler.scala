@@ -1,7 +1,7 @@
 package zio.profiling.tracing
 
+import zio._
 import zio.profiling.TaggedLocation
-import zio.{UIO, _}
 
 import java.lang.System.nanoTime
 import java.util.concurrent.ConcurrentHashMap
@@ -25,7 +25,7 @@ object TracingProfiler {
    * be enabled for the effect.
    */
   def supervisor(implicit trace: Trace): UIO[Supervisor[ProfilingResult]] = ZIO.succeed {
-    val fibers       = new ConcurrentHashMap[FiberId, FiberState]()
+    val fibers       = new ConcurrentHashMap[Int, FiberState]()
     val locationData = new ConcurrentHashMap[TaggedLocation, LocationData]()
 
     def recordCall(location: TaggedLocation, duration: Long): Unit = {
@@ -68,16 +68,17 @@ object TracingProfiler {
         value: Exit[E, A],
         fiber: Fiber.Runtime[E, A]
       )(implicit unsafe: Unsafe): Unit = {
-        val state = fibers.get(fiber.id)
+        val id    = fiber.id.id
+        val state = fibers.get(id)
         if ((state ne null) && (state.trace ne null)) {
           recordCall(state.taggedLocation, nanoTime() - state.timestamp)
-          fibers.remove(fiber.id)
+          fibers.remove(id)
           ()
         }
       }
 
       override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-        val state = fibers.get(fiber.id)
+        val state = fibers.get(fiber.id.id)
         if ((state ne null) && (state.trace ne null)) {
           recordCall(state.taggedLocation, nanoTime() - state.timestamp)
           state.trace = null.asInstanceOf[Trace]
@@ -89,11 +90,13 @@ object TracingProfiler {
         fiber: Fiber.Runtime[E, A],
         effect: ZIO[_, _, _]
       )(implicit unsafe: Unsafe): Unit = {
-        var state = fibers.get(fiber.id)
+        val id = fiber.id.id
+
+        var state = fibers.get(id)
 
         if (state eq null) {
           state = FiberState.makeFor(fiber)
-          fibers.put(fiber.id, state)
+          fibers.put(id, state)
           ()
         } else if (state.trace ne null) {
           recordCall(state.taggedLocation, nanoTime() - state.timestamp)

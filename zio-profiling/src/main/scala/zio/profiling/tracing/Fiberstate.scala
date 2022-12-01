@@ -15,7 +15,6 @@ final private class FiberState private (
 
   def taggedLocation: TaggedLocation =
     costCenter #> trace
-
 }
 
 private object FiberState {
