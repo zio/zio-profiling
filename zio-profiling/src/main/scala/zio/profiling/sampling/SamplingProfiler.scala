@@ -2,10 +2,12 @@ package zio.profiling.sampling
 
 import zio.Unsafe.unsafe
 import zio._
-import zio.profiling.{CostCenter, TaggedLocation}
+import zio.profiling.CostCenter
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
+import java.util.concurrent.atomic.AtomicReference
+import scala.collection.immutable.SortedSet
 
 final case class SamplingProfiler(
   samplingPeriod: Duration = 10.millis
@@ -15,83 +17,62 @@ final case class SamplingProfiler(
    * Profile a program and get the resulting profile data.
    */
   def profile[R, E](zio: ZIO[R, E, Any]): ZIO[R, E, ProfilingResult] = ZIO.scoped[R] {
-    supervisor.flatMap { prof =>
-      zio
-        .withRuntimeFlags(RuntimeFlags.enable(RuntimeFlag.OpSupervision))
-        .supervised(prof)
-        .zipRight(prof.value)
-    }
+    for {
+      supervisor <- makeSupervisor
+      _          <- (zio.forkScoped).supervised(supervisor).flatMap(_.join)
+      result     <- supervisor.value
+    } yield result
   }
 
-  /**
-   * Create a supervisor that can be used to profile a zio program. For profiling to work correctly, OpSupervision must
-   * be enabled for the effect.
-   */
-  def supervisor(implicit trace: Trace): URIO[Scope, Supervisor[ProfilingResult]] = ZIO.suspendSucceed {
-    val fibers       = new ConcurrentHashMap[Int, FiberState]()
-    val locationData = new ConcurrentHashMap[TaggedLocation, Long]()
-
-    def isValidLocation(trace: Trace): Boolean =
-      (trace ne null) && trace != Trace.empty
+  val makeSupervisor: URIO[Scope, Supervisor[ProfilingResult]] = {
+    val fibersRef   = new AtomicReference[SortedSet[Fiber.Runtime[Any, Any]]](SortedSet.empty)
+    val costCenters = new ConcurrentHashMap[CostCenter, Long]()
 
     val sampleFibers = ZIO.succeed {
-      fibers.values().forEach { state =>
-        val location = state.trace
-        if (isValidLocation(location)) {
-          val costCenter     = unsafe(implicit u => CostCenter.getCurrentUnsafe(state.runtime))
-          val taggedLocation = costCenter #> location
-          locationData.put(taggedLocation, locationData.getOrDefault(taggedLocation, 0) + 1)
-          ()
-        }
+      fibersRef.get().foreach { fiber =>
+        val cc = unsafe(implicit u => CostCenter.getCurrentUnsafe(fiber))
+        costCenters.put(cc, costCenters.getOrDefault(cc, 0) + 1)
       }
-    }.repeat(Schedule.spaced(samplingPeriod)).delay(samplingPeriod)
+    }
 
     val supervisor = new Supervisor[ProfilingResult] {
-      def value(implicit trace: zio.Trace): UIO[ProfilingResult] =
-        ZIO.succeed {
-          val entries = locationData.entrySet().asScala.map { entry =>
-            ProfilingResult.Entry(entry.getKey(), entry.getValue())
-          }
-          ProfilingResult(entries.toList)
+      def value(implicit trace: Trace): UIO[ProfilingResult] = ZIO.succeed {
+        val entries = costCenters.entrySet().asScala.map { entry =>
+          ProfilingResult.Entry(entry.getKey(), entry.getValue())
         }
+        ProfilingResult(entries.toList)
+      }
 
       def onStart[R, E, A](
         environment: ZEnvironment[R],
         effect: ZIO[R, E, A],
         parent: Option[Fiber.Runtime[Any, Any]],
         fiber: Fiber.Runtime[E, A]
-      )(implicit unsafe: Unsafe): Unit = ()
+      )(implicit unsafe: Unsafe): Unit =
+        onResume(fiber)
 
-      def onEnd[R, E, A](
-        value: Exit[E, A],
-        fiber: Fiber.Runtime[E, A]
-      )(implicit unsafe: Unsafe): Unit = {
-        fibers.remove(fiber.id.id)
-        ()
+      def onEnd[R, E, A](value: Exit[E, A], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit =
+        onSuspend(fiber)
+
+      override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+        var loop = true
+        while (loop) {
+          val original = fibersRef.get
+          val updated = original + fiber
+          loop = !fibersRef.compareAndSet(original, updated)
+        }
       }
 
       override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-        fibers.remove(fiber.id.id)
-        ()
-      }
-
-      override def onEffect[E, A](
-        fiber: Fiber.Runtime[E, A],
-        effect: ZIO[_, _, _]
-      )(implicit unsafe: Unsafe): Unit = {
-        val id    = fiber.id.id
-        var state = fibers.get(id)
-
-        if (state eq null) {
-          state = FiberState(fiber, effect.trace)
-          fibers.put(id, state)
-          ()
-        } else {
-          state.trace = effect.trace
+        var loop = true
+        while (loop) {
+          val original = fibersRef.get
+          val updated = original - fiber
+          loop = !fibersRef.compareAndSet(original, updated)
         }
       }
     }
 
-    sampleFibers.forkScoped.as(supervisor)
+    sampleFibers.repeat(Schedule.spaced(samplingPeriod)).delay(samplingPeriod).forkScoped.as(supervisor)
   }
 }

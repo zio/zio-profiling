@@ -1,9 +1,9 @@
 package zio.profiling.examples
 
 import zio._
-import zio.profiling.tracing._
+import zio.profiling.sampling._
 
-object TracingProfilerProducerConsumerExample extends ZIOAppDefault {
+object SamplingProfilerProducerConsumerExample extends ZIOAppDefault {
 
   val Items         = 10000
   val QueueSize     = 1
@@ -24,13 +24,13 @@ object TracingProfilerProducerConsumerExample extends ZIOAppDefault {
       for {
         iteration <- iterationRef.updateAndGet(_ + 1)
         _         <- ZIO.logInfo(s"Iteration $iteration")
-        producers <- ZIO.forkAll(List.fill(ProducerCount)(producer)) <# "producer"
-        consumers <- ZIO.forkAll(List.fill(ConsumerCount)(consumer)) <# "consumer"
+        producers <- ZIO.forkAll(List.fill(ProducerCount)(producer))
+        consumers <- ZIO.forkAll(List.fill(ConsumerCount)(consumer))
         _         <- producers.join *> consumers.join
       } yield ()
     }
 
-    TracingProfiler
+    SamplingProfiler()
       .profile(Ref.make(0).flatMap(program(_).repeatN(99)))
       .flatMap(_.stackCollapseToFile("profile.folded"))
       .exitCode

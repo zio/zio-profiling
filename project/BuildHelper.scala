@@ -62,6 +62,48 @@ object BuildHelper {
       buildInfoPackage := prjName
     )
 
+  def macroDefinitionSettings = Seq(
+    scalacOptions += "-language:experimental.macros",
+    libraryDependencies ++= {
+      if (scalaVersion.value == Scala3) Seq()
+      else
+        Seq(
+          "org.scala-lang" % "scala-reflect"  % scalaVersion.value % "provided",
+          "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
+        )
+    }
+  )
+
+  def pluginDefinitionSettings = Seq(
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) =>
+          Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided")
+        case Some((3, _))  =>
+          Seq("org.scala-lang" %% "scala3-compiler" % scalaVersion.value % "provided")
+        case _             =>
+          Seq.empty
+      }
+    }
+  )
+
+  def extraSourceDirectorySettings = Seq(
+    Compile / unmanagedSourceDirectories ++= {
+      extraSourceDirectories(
+        sourceDirectory.value,
+        scalaVersion.value,
+        "main",
+      )
+    },
+    Test / unmanagedSourceDirectories ++= {
+      extraSourceDirectories(
+        sourceDirectory.value,
+        scalaVersion.value,
+        "test",
+      )
+    }
+  )
+
   private val stdOptions =
     List("-deprecation", "-encoding", "UTF-8", "-feature", "-unchecked", "-Xfatal-warnings")
 
@@ -105,4 +147,21 @@ object BuildHelper {
 
   private def extraOptimizerOptions(optimize: Boolean): List[String] =
     if (optimize) List("-opt:l:inline", "-opt-inline-from:zio.internal.**") else Nil
+
+  private def extraSourceDirectories(baseDirectory: File, scalaVer: String, conf: String) = {
+    val versions = CrossVersion.partialVersion(scalaVer) match {
+      case Some((2, _)) =>
+        List("2")
+      case Some((3, _))  =>
+        List("3")
+      case _             =>
+        List()
+    }
+
+    for {
+      version  <- "scala" :: versions.toList.map("scala-" + _)
+      result    = baseDirectory.getParentFile / "src" / conf / version
+      if result.exists
+    } yield result
+  }
 }

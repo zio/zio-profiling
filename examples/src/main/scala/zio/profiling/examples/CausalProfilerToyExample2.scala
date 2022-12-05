@@ -7,11 +7,11 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
 
   val prog: ZIO[Any, Nothing, Unit] = for {
     done <- Ref.make(false)
-    f    <- (doUselessBackgroundWork *> done.get).repeatUntilEquals(true).fork <# "backgroundwork"
-    _    <- doRealWork <# "realwork"
+    f    <- (doUselessBackgroundWork *> done.get).repeatUntilEquals(true).fork
+    _    <- doRealWork
     _    <- done.set(true)
     _    <- f.join
-    _    <- progressPoint("workDone")
+    _    <- CausalProfiler.progressPoint("workDone")
   } yield ()
 
   def doRealWork: ZIO[Any, Nothing, Unit] = ZIO.succeed(Thread.sleep(100))

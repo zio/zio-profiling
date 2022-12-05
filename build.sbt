@@ -1,3 +1,5 @@
+import Keys.{ `package` => packageTask }
+
 import BuildHelper._
 import Dependencies._
 
@@ -28,12 +30,12 @@ lazy val root = project
   .settings(
     publish / skip := true
   )
-  .aggregate(core, examples, benchmarks, docs)
+  .aggregate(core, taggingPlugin, examples, benchmarks, docs)
 
 lazy val core = project
   .in(file("zio-profiling"))
-  .settings(stdSettings("zio-profiling"))
   .settings(
+    stdSettings("zio-profiling"),
     libraryDependencies ++= Seq(
       "dev.zio"                %% "zio"                     % zioVersion,
       "org.scala-lang.modules" %% "scala-collection-compat" % collectionCompatVersion,
@@ -43,25 +45,37 @@ lazy val core = project
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
 
+lazy val taggingPlugin = project
+  .in(file("zio-profiling-tagging-plugin"))
+  .settings(
+    stdSettings("zio-profiling-tagging-plugin"),
+    extraSourceDirectorySettings,
+    pluginDefinitionSettings
+  )
+
+lazy val taggingPluginJar = taggingPlugin / Compile / packageTask
+
 lazy val examples = project
   .in(file("examples"))
-  .settings(stdSettings("examples"))
+  .dependsOn(core, taggingPlugin % "plugin")
   .settings(
-    publish / skip := true
+    stdSettings("examples"),
+    publish / skip := true,
+    scalacOptions += s"-Xplugin:${taggingPluginJar.value.getAbsolutePath}"
   )
-  .dependsOn(core)
 
 lazy val benchmarks = project
   .in(file("benchmarks"))
-  .settings(stdSettings("examples"))
   .dependsOn(core)
   .enablePlugins(JmhPlugin)
   .settings(
+    stdSettings("examples"),
     publish / skip := true
   )
 
 lazy val docs = project
   .in(file("zio-profiling-docs"))
+  .dependsOn(core)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .settings(
     publish / skip := true,
@@ -75,4 +89,3 @@ lazy val docs = project
     docusaurusCreateSite     := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(core)

@@ -5,7 +5,30 @@
 | [![Project stage][Badge-Stage]][Link-Stage-Page] | [![Build Status][Badge-Circle]][Link-Circle] | [![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases] | [![Snapshot Artifacts][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots] | [![Badge-Discord]][Link-Discord] |
 
 # Summary
-TODO: Tagline
+ZIO Profiling is a collection of various profilers for cpu profiling of ZIO programs.
+
+```scala
+import zio._
+import zio.profiling.sampling._
+
+object SamplingProfilerSimpleExample extends ZIOAppDefault {
+  def run: URIO[Any, ExitCode] = {
+
+    val fast = ZIO.succeed(Thread.sleep(400))
+
+    val slow = ZIO.succeed(Thread.sleep(200)) <&> ZIO.succeed(Thread.sleep(600))
+
+    val program = fast <&> slow
+
+    SamplingProfiler()
+      .profile(program)
+      .flatMap(_.stackCollapseToFile("profile.folded"))
+      .exitCode
+  }
+}
+```
+
+![Tracing Profiler Output](./website/static/img/example_tracing_profile.svg?raw=true")
 
 # Documentation
 [zio-profiling Microsite](https://zio.github.io/zio-profiling/)

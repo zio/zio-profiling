@@ -3,7 +3,6 @@ package zio.profiling
 import org.openjdk.jmh.annotations.{Scope => JScope, _}
 import zio._
 import zio.profiling.sampling.SamplingProfiler
-import zio.profiling.tracing.TracingProfiler
 
 import java.util.concurrent.TimeUnit
 
@@ -28,9 +27,6 @@ class FlatMapBenchmark {
   @Benchmark
   def zioFlatMapOpSupervision(): Unit =
     BenchmarkUtil.unsafeRun(testEffect.withRuntimeFlags(RuntimeFlags.enable(RuntimeFlag.OpSupervision)))
-
-  @Benchmark
-  def zioFlatMapProfiledTracing(): Unit = BenchmarkUtil.unsafeRun(TracingProfiler.profile(testEffect).unit)
 
   @Benchmark
   def zioFlatMapProfiledSampling(): Unit = BenchmarkUtil.unsafeRun(SamplingProfiler(10.millis).profile(testEffect).unit)

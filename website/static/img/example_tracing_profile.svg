@@ -1,6 +1,6 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" width="1200" height="118" onload="init(evt)" viewBox="0 0 1200 118" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg version="1.1" width="1200" height="134" onload="init(evt)" viewBox="0 0 1200 134" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
 <!-- NOTES:  -->
 <defs>
@@ -334,40 +334,32 @@
 	}
 ]]>
 </script>
-<rect x="0.0" y="0" width="1200.0" height="118.0" fill="url(#background)"  />
+<rect x="0.0" y="0" width="1200.0" height="134.0" fill="url(#background)"  />
 <text id="title" x="600.00" y="24" >Flame Graph</text>
-<text id="details" x="10.00" y="101" > </text>
+<text id="details" x="10.00" y="117" > </text>
 <text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
 <text id="search" x="1090.00" y="24" >Search</text>
-<text id="matched" x="1090.00" y="101" > </text>
+<text id="matched" x="1090.00" y="117" > </text>
 <g id="frames">
 <g >
-<title>zio.profiling.examples.TracingProfilerSimpleExample.run.program(TracingProfilerSimpleExample.scala:10) (356 samples, 35.71%)</title><rect x="762.7" y="37" width="421.4" height="15.0" fill="rgb(225,117,45)" rx="2" ry="2" />
-<text  x="765.74" y="47.5" >zio.profiling.examples.TracingProfilerSimpleExample.run.p..</text>
+<title>zio.profiling.examples.SamplingProfilerSimpleExample.fast(SamplingProfilerSimpleExample.scala:9) (29 samples, 32.58%)</title><rect x="23.3" y="37" width="384.5" height="15.0" fill="rgb(217,132,41)" rx="2" ry="2" />
+<text  x="26.26" y="47.5" >zio.profiling.examples.SamplingProfilerSimpleExample..</text>
 </g>
 <g >
-<title>&lt;unknown&gt; (9 samples, 0.90%)</title><rect x="752.1" y="37" width="10.6" height="15.0" fill="rgb(222,223,49)" rx="2" ry="2" />
-<text  x="755.09" y="47.5" ></text>
+<title>zio.profiling.examples.SamplingProfilerSimpleExample.slow(SamplingProfilerSimpleExample.scala:11) (59 samples, 66.29%)</title><rect x="407.8" y="37" width="782.2" height="15.0" fill="rgb(212,184,40)" rx="2" ry="2" />
+<text  x="410.75" y="47.5" >zio.profiling.examples.SamplingProfilerSimpleExample.slow(SamplingProfilerSimpleExample.scala:11)</text>
 </g>
 <g >
-<title>short (365 samples, 36.61%)</title><rect x="752.1" y="53" width="432.0" height="15.0" fill="rgb(232,176,0)" rx="2" ry="2" />
-<text  x="755.09" y="63.5" >short</text>
+<title>zio.profiling.examples.SamplingProfilerSimpleExample.program(SamplingProfilerSimpleExample.scala:13) (88 samples, 98.88%)</title><rect x="23.3" y="53" width="1166.7" height="15.0" fill="rgb(236,159,49)" rx="2" ry="2" />
+<text  x="26.26" y="63.5" >zio.profiling.examples.SamplingProfilerSimpleExample.program(SamplingProfilerSimpleExample.scala:13)</text>
 </g>
 <g >
-<title>long (627 samples, 62.89%)</title><rect x="10.0" y="53" width="742.1" height="15.0" fill="rgb(215,144,1)" rx="2" ry="2" />
-<text  x="13.00" y="63.5" >long</text>
+<title>all (89 samples, 100%)</title><rect x="10.0" y="85" width="1180.0" height="15.0" fill="rgb(250,59,45)" rx="2" ry="2" />
+<text  x="13.00" y="95.5" ></text>
 </g>
 <g >
-<title>zio.profiling.examples.TracingProfilerSimpleExample.run.program(TracingProfilerSimpleExample.scala:10) (5 samples, 0.50%)</title><rect x="1184.1" y="53" width="5.9" height="15.0" fill="rgb(241,117,35)" rx="2" ry="2" />
-<text  x="1187.08" y="63.5" ></text>
-</g>
-<g >
-<title>all (997 samples, 100%)</title><rect x="10.0" y="69" width="1180.0" height="15.0" fill="rgb(234,63,42)" rx="2" ry="2" />
-<text  x="13.00" y="79.5" ></text>
-</g>
-<g >
-<title>zio.profiling.examples.TracingProfilerSimpleExample.run.program(TracingProfilerSimpleExample.scala:11) (627 samples, 62.89%)</title><rect x="10.0" y="37" width="742.1" height="15.0" fill="rgb(248,9,25)" rx="2" ry="2" />
-<text  x="13.00" y="47.5" >zio.profiling.examples.TracingProfilerSimpleExample.run.program(TracingProfilerSimpleExample.scala:11)</text>
+<title>zio.profiling.examples.SamplingProfilerSimpleExample.run(SamplingProfilerSimpleExample.scala:7) (89 samples, 100.00%)</title><rect x="10.0" y="69" width="1180.0" height="15.0" fill="rgb(236,201,16)" rx="2" ry="2" />
+<text  x="13.00" y="79.5" >zio.profiling.examples.SamplingProfilerSimpleExample.run(SamplingProfilerSimpleExample.scala:7)</text>
 </g>
 </g>
 </svg>

@@ -1,14 +1,11 @@
 package zio.profiling.sampling
 
 import zio._
-import zio.profiling.CostCenter._
-import zio.profiling.{CostCenter, TaggedLocation}
+import zio.profiling.CostCenter
 
 import java.nio.file.{Files, Paths}
 
-final case class ProfilingResult(
-  entries: List[ProfilingResult.Entry]
-) {
+final case class ProfilingResult(entries: List[ProfilingResult.Entry]) {
 
   /**
    * Render the result so it can be transformed into a flamegraph using https://github.com/brendangregg/FlameGraph.
@@ -16,24 +13,17 @@ final case class ProfilingResult(
    * Example command: `flamegraph.pl profile.folded > profile.svg`
    */
   def stackCollapse: List[String] = {
-    def renderTrace(trace: Trace): String =
-      if (trace == Trace.empty) "<unknown>" else trace.toString
-
-    def renderCostCenter(costCenter: CostCenter): String =
+    def renderCostCenter(costCenter: CostCenter): String = {
+      import CostCenter._
       costCenter match {
         case Root                => ""
         case Child(Root, name)   => name
         case Child(parent, name) => s"${renderCostCenter(parent)};$name"
       }
-
-    def renderLocation(taggedLocation: TaggedLocation) =
-      if (taggedLocation.costCenter.isRoot)
-        renderTrace(taggedLocation.location)
-      else
-        s"${renderCostCenter(taggedLocation.costCenter)};${renderTrace(taggedLocation.location)}"
+    }
 
     entries.map { entry =>
-      s"${renderLocation(entry.location)} ${entry.samples}"
+      s"${renderCostCenter(entry.costCenter)} ${entry.samples}"
     }
   }
 
@@ -54,8 +44,5 @@ final case class ProfilingResult(
 }
 
 object ProfilingResult {
-  final case class Entry(
-    location: TaggedLocation,
-    samples: Long
-  )
+  final case class Entry(costCenter: CostCenter, samples: Long)
 }
