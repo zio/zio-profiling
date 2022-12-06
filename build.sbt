@@ -15,8 +15,8 @@ inThisBuild(
   )
 )
 
-addCommandAlias("compileSources", "zioProfiling/Test/compile; zioProfilingExamples/Test/compile")
-addCommandAlias("testAll", "zioProfiling/test")
+addCommandAlias("compileSources", "core/Test/compile; taggingPlugin/compile; examples/compile")
+addCommandAlias("testAll", "core/test")
 
 addCommandAlias("check", "fixCheck; fmtCheck")
 addCommandAlias("fix", "scalafixAll")
