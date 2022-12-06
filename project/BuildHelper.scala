@@ -31,11 +31,13 @@ object BuildHelper {
   val Scala213 = versions("2.13")
   val Scala3   = versions("3")
 
+  val defaulScalaVersion = Scala213
+
   def stdSettings(prjName: String) =
     Seq(
       name                     := s"$prjName",
       crossScalaVersions       := List(Scala212, Scala213, Scala3),
-      ThisBuild / scalaVersion := Scala213,
+      ThisBuild / scalaVersion := defaulScalaVersion,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
       libraryDependencies ++= {
         if (scalaVersion.value == Scala3)
@@ -48,7 +50,7 @@ object BuildHelper {
             compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full)
           )
       },
-      semanticdbEnabled := scalaVersion.value != Scala3,
+      semanticdbEnabled := scalaVersion.value == defaulScalaVersion,
       semanticdbOptions += "-P:semanticdb:synthetics:on",
       semanticdbVersion                                          := scalafixSemanticdb.revision,
       ThisBuild / scalafixScalaBinaryVersion                     := CrossVersion.binaryScalaVersion(scalaVersion.value),

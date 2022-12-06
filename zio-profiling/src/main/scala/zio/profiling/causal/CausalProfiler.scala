@@ -183,7 +183,9 @@ final case class CausalProfiler(
                             // with a speedup of 100%, we expect the program to take twice as long
                             def compensateSpeedup(original: Int): Int = (original * (2 - previous.speedup)).toInt
 
-                            val minDelta = previous.throughputData.map(_.delta).minOption.fold(0)(compensateSpeedup)
+                            val minDelta =
+                              if (previous.throughputData.isEmpty) 0
+                              else compensateSpeedup(previous.throughputData.map(_.delta).min)
 
                             val nextDuration =
                               if (minDelta < experimentTargetSamples) {

@@ -28,7 +28,7 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
 
     CausalProfiler(iterations = 30, experimentTargetSamples = 5)
       .profile(program.forever)
-      .flatMap(_.renderToFile("profile.coz"))
+      .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
       .exitCode
   }
 }

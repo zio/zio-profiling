@@ -31,7 +31,7 @@ sealed trait CostCenter { self =>
    */
   final def /(location: String): CostCenter = self match {
     case Root => Child(Root, location)
-    case Child(parent, current) =>
+    case Child(_, current) =>
       if (current == location)
         self
       else

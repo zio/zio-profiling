@@ -14,7 +14,7 @@ object PresentationExample extends ZIOAppDefault {
 
     SamplingProfiler()
       .profile(program)
-      .flatMap(_.stackCollapseToFile("profile.folded"))
+      .flatMap[Any, Throwable, Unit](_.stackCollapseToFile("profile.folded"))
       .exitCode
   }
 }

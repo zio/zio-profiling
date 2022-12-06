@@ -15,6 +15,6 @@ object CausalProfilerToyExample extends ZIOAppDefault {
       } yield ()
       io.forever
     }
-      .flatMap(_.renderToFile("profile.coz"))
+      .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
       .exitCode
 }

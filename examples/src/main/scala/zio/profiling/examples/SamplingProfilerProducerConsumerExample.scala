@@ -32,7 +32,7 @@ object SamplingProfilerProducerConsumerExample extends ZIOAppDefault {
 
     SamplingProfiler()
       .profile(Ref.make(0).flatMap(program(_).repeatN(99)))
-      .flatMap(_.stackCollapseToFile("profile.folded"))
+      .flatMap[Any, Throwable, Unit](_.stackCollapseToFile("profile.folded"))
       .exitCode
   }
 }

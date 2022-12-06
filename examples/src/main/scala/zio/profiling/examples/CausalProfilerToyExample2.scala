@@ -21,6 +21,6 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
   def run: URIO[Any, ExitCode] =
     CausalProfiler(iterations = 100)
       .profile(prog.forever)
-      .flatMap(_.renderToFile("profile.coz"))
+      .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
       .exitCode
 }
