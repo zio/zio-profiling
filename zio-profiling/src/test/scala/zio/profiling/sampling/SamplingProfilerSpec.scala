@@ -2,12 +2,12 @@ package zio.profiling.sampling
 
 import zio._
 import zio.profiling.{BaseSpec, CostCenter}
+import zio.test.Assertion.{hasSize, isGreaterThanEqualTo}
 import zio.test._
-import zio.test.Assertion.{isGreaterThanEqualTo, hasSize}
 
 object SamplingProfilerSpec extends BaseSpec {
 
-  def spec =
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("SamplingProfiler")(
       test("Should correctly profile simple example program") {
         val program = for {
@@ -18,7 +18,7 @@ object SamplingProfilerSpec extends BaseSpec {
         Live.live(SamplingProfiler().profile(program)).map { result =>
           val sortedEntries = result.entries.sortBy(_.samples).reverse
 
-          def isLongEffect(location: CostCenter) = location.hasParent("long")
+          def isLongEffect(location: CostCenter)  = location.hasParent("long")
           def isShortEffect(location: CostCenter) = location.hasParent("short")
 
           assert(sortedEntries)(hasSize(isGreaterThanEqualTo(2))) &&

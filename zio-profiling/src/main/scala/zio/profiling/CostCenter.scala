@@ -17,7 +17,7 @@ sealed trait CostCenter { self =>
   import CostCenter._
 
   final def location: Option[String] = self match {
-    case Root => None
+    case Root              => None
     case Child(_, current) => Some(current)
   }
 
@@ -29,7 +29,7 @@ sealed trait CostCenter { self =>
   /**
    * Create a child cost center that is nested under this one.
    */
-  final def / (location: String): CostCenter = self match {
+  final def /(location: String): CostCenter = self match {
     case Root => Child(Root, location)
     case Child(parent, current) =>
       if (current == location)
@@ -48,7 +48,7 @@ sealed trait CostCenter { self =>
    * }}}
    */
   final def hasParent(name: String): Boolean = self match {
-    case Root => false
+    case Root                   => false
     case Child(parent, current) => current == name || parent.hasParent(name)
   }
 }

@@ -1,4 +1,4 @@
-import Keys.{ `package` => packageTask }
+import Keys.{`package` => packageTask}
 
 import BuildHelper._
 import Dependencies._

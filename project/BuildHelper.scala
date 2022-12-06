@@ -79,9 +79,9 @@ object BuildHelper {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, _)) =>
           Seq("org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided")
-        case Some((3, _))  =>
+        case Some((3, _)) =>
           Seq("org.scala-lang" %% "scala3-compiler" % scalaVersion.value % "provided")
-        case _             =>
+        case _ =>
           Seq.empty
       }
     }
@@ -92,14 +92,14 @@ object BuildHelper {
       extraSourceDirectories(
         sourceDirectory.value,
         scalaVersion.value,
-        "main",
+        "main"
       )
     },
     Test / unmanagedSourceDirectories ++= {
       extraSourceDirectories(
         sourceDirectory.value,
         scalaVersion.value,
-        "test",
+        "test"
       )
     }
   )
@@ -152,15 +152,15 @@ object BuildHelper {
     val versions = CrossVersion.partialVersion(scalaVer) match {
       case Some((2, _)) =>
         List("2")
-      case Some((3, _))  =>
+      case Some((3, _)) =>
         List("3")
-      case _             =>
+      case _ =>
         List()
     }
 
     for {
-      version  <- "scala" :: versions.toList.map("scala-" + _)
-      result    = baseDirectory.getParentFile / "src" / conf / version
+      version <- "scala" :: versions.toList.map("scala-" + _)
+      result   = baseDirectory.getParentFile / "src" / conf / version
       if result.exists
     } yield result
   }

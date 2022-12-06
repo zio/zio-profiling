@@ -5,9 +5,9 @@ import zio._
 import zio.profiling.CostCenter
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.jdk.CollectionConverters._
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.immutable.SortedSet
+import scala.jdk.CollectionConverters._
 
 final case class SamplingProfiler(
   samplingPeriod: Duration = 10.millis
@@ -58,7 +58,7 @@ final case class SamplingProfiler(
         var loop = true
         while (loop) {
           val original = fibersRef.get
-          val updated = original + fiber
+          val updated  = original + fiber
           loop = !fibersRef.compareAndSet(original, updated)
         }
       }
@@ -67,7 +67,7 @@ final case class SamplingProfiler(
         var loop = true
         while (loop) {
           val original = fibersRef.get
-          val updated = original - fiber
+          val updated  = original - fiber
           loop = !fibersRef.compareAndSet(original, updated)
         }
       }
