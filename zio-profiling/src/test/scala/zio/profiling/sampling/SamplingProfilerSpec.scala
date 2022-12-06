@@ -1,39 +1,31 @@
 package zio.profiling.sampling
 
 import zio._
-import zio.profiling.{BaseSpec, CostCenter, TaggedLocation}
+import zio.profiling.{BaseSpec, CostCenter}
+import zio.test.Assertion.{hasSize, isGreaterThanEqualTo}
 import zio.test._
 
 object SamplingProfilerSpec extends BaseSpec {
 
-  def spec =
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("SamplingProfiler")(
       test("Should correctly profile simple example program") {
         val program = for {
-          _ <- ZIO.succeed(Thread.sleep(200)) <# "short"
-          _ <- ZIO.succeed(Thread.sleep(400)) <# "long"
+          _ <- CostCenter.withChildCostCenter("short")(ZIO.succeed(Thread.sleep(200)))
+          _ <- CostCenter.withChildCostCenter("long")(ZIO.succeed(Thread.sleep(400)))
         } yield ()
 
-        SamplingProfiler().profile(program).map { result =>
+        Live.live(SamplingProfiler().profile(program)).map { result =>
           val sortedEntries = result.entries.sortBy(_.samples).reverse
 
-          def isLongEffect(location: TaggedLocation) = location match {
-            case TaggedLocation(CostCenter.Child(CostCenter.Root, "long"), _) => true
-            case _                                                            => false
-          }
+          def isLongEffect(location: CostCenter)  = location.hasParent("long")
+          def isShortEffect(location: CostCenter) = location.hasParent("short")
 
-          def isShortEffect(location: TaggedLocation) = location match {
-            case TaggedLocation(CostCenter.Child(CostCenter.Root, "short"), _) => true
-            case _                                                             => false
-          }
-
-          val longEffect  = sortedEntries(0)
-          val shortEffect = sortedEntries(1)
-
-          assertTrue(isLongEffect(longEffect.location)) &&
-          assertTrue(isShortEffect(shortEffect.location))
+          assert(sortedEntries)(hasSize(isGreaterThanEqualTo(2))) &&
+          assertTrue(isLongEffect(sortedEntries(0).costCenter)) &&
+          assertTrue(isShortEffect(sortedEntries(1).costCenter))
         }
       }
-    ) @@ TestAspect.withLiveClock
+    )
 
 }

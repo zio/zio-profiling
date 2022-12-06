@@ -1,0 +1,4 @@
+<plugin>
+    <name>zio-profiling-tagging</name>
+    <classname>zio.profiling.plugins.TaggingPlugin</classname>
+</plugin>

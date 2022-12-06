@@ -13,22 +13,22 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
   def run: URIO[Any, ExitCode] = {
     val program = Queue.bounded[Unit](QueueSize).flatMap { queue =>
       def producer =
-        queue.offer(()).repeatN((Items / ProducerCount) - 1) <# "producer"
+        queue.offer(()).repeatN((Items / ProducerCount) - 1)
 
       def consumer =
-        (queue.take).repeatN((Items / ConsumerCount) - 1) <# "consumer"
+        (queue.take).repeatN((Items / ConsumerCount) - 1)
 
       for {
         producers <- ZIO.forkAll(List.fill(ProducerCount)(producer))
         consumers <- ZIO.forkAll(List.fill(ConsumerCount)(consumer))
         _         <- producers.join *> consumers.join
-        _         <- progressPoint("iteration")
+        _         <- CausalProfiler.progressPoint("iteration")
       } yield ()
     }
 
     CausalProfiler(iterations = 30, experimentTargetSamples = 5)
       .profile(program.forever)
-      .flatMap(_.renderToFile("profile.coz"))
+      .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
       .exitCode
   }
 }

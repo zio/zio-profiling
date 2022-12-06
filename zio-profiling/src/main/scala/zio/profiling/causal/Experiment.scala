@@ -17,13 +17,12 @@
 package zio.profiling.causal
 
 import com.github.ghik.silencer.silent
-import zio.profiling.CostCenter
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
 
 final private class Experiment(
-  val candidate: CostCenter,
+  val candidate: String,
   val startTime: Long,
   val duration: Long,
   val speedUp: Float,
@@ -49,7 +48,7 @@ final private class Experiment(
   @silent("JavaConverters")
   def toResult(): ExperimentResult =
     ExperimentResult(
-      candidate.render,
+      candidate,
       speedUp,
       duration,
       effectiveDuration,

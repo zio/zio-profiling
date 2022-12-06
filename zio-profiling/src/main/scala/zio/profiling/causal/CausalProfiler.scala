@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * The profiler will periodically select regions of code for optimization and will artifically speed them up by slowing
  * down all code that runs concurrently with it. It will determine throughput based on the number of times that
- * [[zio.profiling.causal.progressPoint]] has been invoked during an experiment.
+ * [[zio.profiling.causal.CausalProfiler.progressPoint]] has been invoked during an experiment.
  *
  * Only [[zio.profiling.CostCenter]] will be considered for optimization, so make sure to tag the code.
  *
@@ -57,7 +57,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 final case class CausalProfiler(
   iterations: Int = 100,
-  candidateSelector: CandidateSelector = CandidateSelector.default,
+  candidateSelector: String => Boolean = _ => true,
   samplingPeriod: Duration = 20.millis,
   minExperimentDuration: Duration = 1.second,
   experimentTargetSamples: Int = 30,
@@ -80,7 +80,7 @@ final case class CausalProfiler(
    *
    * The profiled program must use the `progressPoint` function to signal progress to the profiler.
    */
-  def profile[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
+  def profile[R, E](zio: ZIO[R, E, Nothing])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
     ZIO.scoped[R] {
       supervisor.flatMap { prof =>
         zio
@@ -108,7 +108,7 @@ final case class CausalProfiler(
    * }}}
    */
   def profileIterations[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
-    profile((zio *> progressPoint("iteration done")).forever)
+    profile((zio *> CausalProfiler.progressPoint("iteration done")).forever)
 
   /**
    * Create a supervisor that can be used to profile a zio program. Getting the `value` of the supervisor will suspend
@@ -160,7 +160,7 @@ final case class CausalProfiler(
 
         logMessage(s"Warming up for ${warmUpPeriodNanos}ns")
 
-        GlobalTrackerRef.locallyScoped(tracker).zipRight {
+        Tracker.globalRef.locallyScoped(tracker).zipRight {
           Promise.make[Nothing, ProfilingResult].flatMap { resultPromise =>
             val runSamplingStep = ZIO.succeed {
               val now = java.lang.System.nanoTime()
@@ -177,13 +177,15 @@ final case class CausalProfiler(
                   while (experiment == null && iterator.hasNext()) {
                     val fiber = iterator.next()
                     if (fiber.running) {
-                      candidateSelector.select(fiber.costCenter).foreach { candidate =>
+                      fiber.costCenter.location.filter(candidateSelector).foreach { candidate =>
                         results match {
                           case previous :: _ =>
                             // with a speedup of 100%, we expect the program to take twice as long
                             def compensateSpeedup(original: Int): Int = (original * (2 - previous.speedup)).toInt
 
-                            val minDelta = previous.throughputData.map(_.delta).minOption.fold(0)(compensateSpeedup)
+                            val minDelta =
+                              if (previous.throughputData.isEmpty) 0
+                              else compensateSpeedup(previous.throughputData.map(_.delta).min)
 
                             val nextDuration =
                               if (minDelta < experimentTargetSamples) {
@@ -217,7 +219,7 @@ final case class CausalProfiler(
                   if (experiment != null) {
                     samplingState = SamplingState.ExperimentInProgress(experiment, iteration, results)
                     logMessage(
-                      s"Starting experiment $iteration (costCenter: ${experiment.candidate.render}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration}ns)"
+                      s"Starting experiment $iteration (costCenter: ${experiment.candidate}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration}ns)"
                     )
                   }
 
@@ -237,7 +239,7 @@ final case class CausalProfiler(
                     val iterator = fibers.values.iterator()
                     while (iterator.hasNext()) {
                       val fiber = iterator.next()
-                      if (fiber.running && fiber.costCenter.isDescendantOf(experiment.candidate)) {
+                      if (fiber.running && fiber.costCenter.hasParent(experiment.candidate)) {
                         val delayAmount = (experiment.speedUp * samplingPeriodNanos).toLong
                         fiber.localDelay.addAndGet(delayAmount)
                         globalDelay += delayAmount
@@ -389,4 +391,14 @@ final case class CausalProfiler(
     }
     nanoDuration - timeLeft
   }
+}
+
+object CausalProfiler {
+
+  def progressPoint(name: String)(implicit trace: Trace): UIO[Unit] =
+    Tracker.globalRef.get.flatMap { tracker =>
+      ZIO.succeed {
+        tracker.progressPoint(name)
+      }
+    }
 }
