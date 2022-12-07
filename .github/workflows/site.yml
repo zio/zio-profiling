@@ -9,7 +9,7 @@ on:
       - published
 
 jobs:
-  publish:
+-  publish:
     runs-on: ubuntu-20.04
     timeout-minutes: 30
     steps:
@@ -21,6 +21,13 @@ jobs:
           distribution: temurin
           java-version: 17
           check-latest: true
+      - name: Install libuv
+        run: sudo apt-get update && sudo apt-get install -y libuv1-dev
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 7
+      - run: sbt docs/docusaurusPublishGhpages
       - name: Publish the site
         run: ./sbt docs/docusaurusPublishGhpages
         env:
