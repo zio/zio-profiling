@@ -19,30 +19,28 @@ or VisualVM.
 
 ## Installation
 
-ZIO Profiling currently ships as a single artifact that can be added to your build.sbt like this:
+ZIO Profiling requires you to add both the main library and optionally the compiler plugin to your build.sbt:
 ```scala
 libraryDependencies += "dev.zio" %% "zio-profiling" % zioProfilingVersion
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % zioProfilingVersion)
 ```
 
 ## Profiling an application and displaying a flamegraph
 
-For this example we are going to use the tracing profiler to measure the cpu time used by parts of a zio program.
+For this example we are going to use the sampling profiler to measure the cpu time used by parts of a zio program.
 All needed definitions can be imported using:
 ```scala
-import zio.profiling.tracing._
+import zio.profiling.sampling._
 ```
 
-The program we want to instrument simulates performing a short and then a long computation:
+The program we want to instrument simulates performing a short and then a long computation concurrently:
 ```scala
-val program = for {
-  _ <- ZIO.succeed(Thread.sleep(20)) <# "short"
-  _ <- ZIO.succeed(Thread.sleep(40)) <# "long"
-} yield ()
-```
+val fast = ZIO.succeed(Thread.sleep(400))
 
-ZIO Profiling relies on manually annotated effect names instead of deriving cost centers from the function call
-hierarchy, so we need to manually name them using the `<#` operator. Effect names are organized in a hierarchy, so
-nested effects will be identified by the effect it is nested in.
+val slow = ZIO.succeed(Thread.sleep(600))
+
+val program = fast <&> slow
+```
 
 In order to profile the program, we wrap it with the `profile` method of the tracing profiler. Once the effect has completed
 this will yield the profiling result. We can either manipulate the result in Scala or render it in a number of standard
@@ -74,20 +72,22 @@ We can bring the causal profiler into scope with the following import:
 import zio.profiling.causal._
 ```
 
-This time we are using a slightly more complicated example. Note that we still have to manually name effects using the `<#` operator:
+This time we are using a slightly more complicated example:
 ```scala
-val prog: ZIO[Any, Nothing, Unit] = for {
-  done <- Ref.make(false)
-  f    <- (doUselessBackgroundWork *> done.get).repeatUntilEquals(true).fork <# "backgroundwork"
-  _    <- doRealWork <# "realwork"
-  _    <- done.set(true)
-  _    <- f.join
-  _    <- progressPoint("workDone")
-} yield ()
+val fast = ZIO.succeed(Thread.sleep(40))
 
-def doRealWork: ZIO[Any, Nothing, Unit] = ZIO.blocking(ZIO.succeed(Thread.sleep(100)))
+val slow1 = ZIO.succeed(Thread.sleep(20))
 
-def doUselessBackgroundWork: ZIO[Any, Nothing, Unit] = ZIO.blocking(ZIO.succeed(Thread.sleep(30)))
+val slow2 = ZIO.succeed(Thread.sleep(60))
+
+val slow = slow1 <&> slow2
+
+val program = (fast <&> slow) *>
+  CausalProfiler.progressPoint("iteration done")
+
+CausalProfiler(iterations = 100)
+  .profile(program.forever)
+  .flatMap(_.renderToFile("profile.coz"))
 ```
 
 We also need to weave the `progressPoint` effect into our program. It will be used by the causal profiler to measure progress
@@ -103,13 +103,27 @@ CausalProfiler(iterations = 100)
 ```
 
 The file can be viewed using the [Coz Visualizer](https://plasma-umass.org/coz/) ([preview](img/example_causal_profile.png)).
-As you can see, the profiler correctly tells you that you can get more performance out of tweaking the `realwork` effect, but you can also get
-a small speedup by improving `backgroundwork`.
+As you can see, the profiler correctly tells you that you can get up to a 33% speedup by optimizing the `slow2` effect,
+but it's impossible to get a speedup any other way.
 
-## Talks
+## Compiler Plugin
 
-- [Causal Profiling for functional effects](https://youtu.be/rdETYUc8XyI) by Maxim Schuwalow (2021)
+In order to produce actionable output, a profiler not only needs to know which line of code is currently running, but also how that location was reached.
 
-## Other
+Most profilers rely on the function call hierarchy to determine this information, but the call stack is not really useful for programs using functional effect systems. The reason for this is that the normal function calls are only used to build up the program as a datastructure -- not execute it.
 
-- [Scaladoc](https://zio.github.io/zio-profiling/api/index.html)
+---
+
+It's possible to restore the proper callstack while the effects are actually getting executed (this is the approach taken by the zio.Trace machinery), but that is not the approach taken by ZIO Profiling.
+
+Instead, zio-profiling tracks the current 'callstack' of your program using FiberRefs. For this approach to work every effect should be manually annotated using `zio.profiling.CostCenter.withChildCostCenter`, which will result in a hierarchy of effect tags at runtime.
+
+As this requires modification of large parts of user programs and is bad UX, zio-profiling ships with a compiler plugin (zio-profiling-tagging-plugin) that automates this. Every `def` or `val` that returns a zio effect will be rewritten to be properly tagged. Consider this example for the rewrite that happens:
+
+```scala
+val testEffect = ZIO.unit
+
+// gets rewritten to
+
+val testEffect = CostCenter.withChildCostCenter("foo.Foo.testEffect(Foo.scala:12)")(ZIO.unit)
+```

@@ -16,10 +16,15 @@
 
 package zio.profiling.causal
 
+import zio._
+
 private trait Tracker {
   def progressPoint(name: String): Unit
 }
 
 private object Tracker {
   final val noop: Tracker = _ => ()
+
+  private[causal] val globalRef: FiberRef[Tracker] =
+    Unsafe.unsafe(implicit u => FiberRef.unsafe.make(Tracker.noop))
 }

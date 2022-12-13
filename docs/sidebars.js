@@ -1,6 +1,7 @@
 const sidebars = {
   sidebar: [
-    "index"
+    'index',
+    'resources',
   ]
 };
 
