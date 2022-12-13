@@ -1,6 +1,7 @@
 ---
-id: overview_index
-title: "Quick Introduction"
+id: index
+title: "Introduction to ZIO Profiling"
+sidebar_label: "ZIO Profiling"
 ---
 
 ZIO Profiling is a collection of different profilers for better understanding the runtime behavior of ZIO programs.
@@ -51,7 +52,7 @@ TracingProfiler
   .flatMap(_.stackCollapseToFile("profile.folded"))
 ```
 
-The resulting file can be converted to a svg using the flamegraph.pl script ([preview](../../img/example_tracing_profile.svg)):
+The resulting file can be converted to a svg using the flamegraph.pl script ([preview](img/example_tracing_profile.svg)):
 ```bash
 flamegraph.pl ./examples/profile.folded > profile.svg
 ```
@@ -101,7 +102,7 @@ CausalProfiler(iterations = 100)
   .flatMap(_.renderToFile("profile.coz"))
 ```
 
-The file can be viewed using the [Coz Visualizer](https://plasma-umass.org/coz/) ([preview](../../img/example_causal_profile.png)).
+The file can be viewed using the [Coz Visualizer](https://plasma-umass.org/coz/) ([preview](img/example_causal_profile.png)).
 As you can see, the profiler correctly tells you that you can get up to a 33% speedup by optimizing the `slow2` effect,
 but it's impossible to get a speedup any other way.
 

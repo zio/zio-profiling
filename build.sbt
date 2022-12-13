@@ -6,7 +6,7 @@ import Dependencies._
 inThisBuild(
   List(
     organization := "dev.zio",
-    homepage     := Some(url("https://zio.github.io/zio-profiling/")),
+    homepage     := Some(url("https://zio.dev/zio-profiling/")),
     licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers := List(
       Developer("jdegoes", "John De Goes", "john@degoes.net", url("http://degoes.net")),
@@ -27,10 +27,8 @@ addCommandAlias("prepare", "fix; fmt")
 
 lazy val root = project
   .in(file("."))
-  .settings(
-    publish / skip := true
-  )
-  .aggregate(core, taggingPlugin, examples, benchmarks, docs)
+  .settings(publish / skip := true)
+  .aggregate(core, taggingPlugin, examples, benchmarks)
 
 lazy val core = project
   .in(file("zio-profiling"))
@@ -76,16 +74,10 @@ lazy val benchmarks = project
 lazy val docs = project
   .in(file("zio-profiling-docs"))
   .dependsOn(core)
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .enablePlugins(WebsitePlugin)
   .settings(
     publish / skip := true,
     moduleName     := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
-    scalacOptions -= "-Xfatal-warnings",
-    mdocIn                                     := (LocalRootProject / baseDirectory).value / "docs",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core),
-    ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
-    cleanFiles += (ScalaUnidoc / unidoc / target).value,
-    docusaurusCreateSite     := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+    scalacOptions -= "-Xfatal-warnings"
   )

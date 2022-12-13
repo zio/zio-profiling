@@ -7,6 +7,9 @@ addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.2")
 addSbtPlugin("de.heikoseeberger"                 % "sbt-header"       % "5.7.0")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.3.3")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"     % "2.4.6")
+addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.1.5")
 addSbtPlugin("pl.project13.scala"                % "sbt-jmh"          % "0.4.3")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.3"
+
+resolvers += Resolver.sonatypeRepo("public")
