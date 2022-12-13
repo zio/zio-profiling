@@ -54,7 +54,7 @@ class TaggingPlugin(val global: Global) extends Plugin {
         val costCenterModule = rootMirror.getRequiredModule("_root_.zio.profiling.CostCenter")
         val traceModule      = rootMirror.getRequiredModule("_root_.zio.Trace")
 
-        q"$costCenterModule.withChildCostCenter[$t1,$t2,$t3](${Literal(Constant(name))})($tree)($traceModule.empty)"
+        q"$costCenterModule.withChildCostCenter[$t1,$t2,$t3]($name)($tree)($traceModule.empty)"
       }
 
       private object ZioTypeTree {
