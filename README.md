@@ -38,7 +38,7 @@ object SamplingProfilerSimpleExample extends ZIOAppDefault {
 ```
 
 And visualize your application performance in a number of different ways:
-![Tracing Profiler Output](./website/static/img/example_tracing_profile.svg?raw=true")
+![Tracing Profiler Output](./docs/img/example_tracing_profile.svg?raw=true")
 
 # Documentation
 [ZIO Profiling Microsite](https://zio.dev/zio-profiling/)
