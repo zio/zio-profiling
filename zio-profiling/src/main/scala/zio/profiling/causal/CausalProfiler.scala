@@ -156,6 +156,23 @@ final case class CausalProfiler(
               case _ =>
                 ()
             }
+
+          def enterLatencyPoint(name: String): Unit =
+            samplingState match {
+              case SamplingState.ExperimentInProgress(experiment, _, _) =>
+                experiment.addLatencyPointArrival(name)
+              case _ =>
+                ()
+            }
+
+          def exitLatencyPoint(name: String): Unit =
+            samplingState match {
+              case SamplingState.ExperimentInProgress(experiment, _, _) =>
+                experiment.addLatencyPointDeparture(name)
+              case _ =>
+                ()
+            }
+
         }
 
         logMessage(s"Warming up for ${warmUpPeriodNanos}ns")
@@ -197,11 +214,14 @@ final case class CausalProfiler(
                               } else {
                                 previous.duration
                               }
+
                             experiment = new Experiment(
                               candidate,
                               now,
                               nextDuration,
                               selectSpeedUp(),
+                              new ConcurrentHashMap[String, Int](),
+                              new ConcurrentHashMap[String, Int](),
                               new ConcurrentHashMap[String, Int]()
                             )
                           case Nil =>
@@ -210,6 +230,8 @@ final case class CausalProfiler(
                               now,
                               minExperimentDurationNanos,
                               selectSpeedUp(),
+                              new ConcurrentHashMap[String, Int](),
+                              new ConcurrentHashMap[String, Int](),
                               new ConcurrentHashMap[String, Int]()
                             )
                         }
@@ -397,8 +419,19 @@ object CausalProfiler {
 
   def progressPoint(name: String)(implicit trace: Trace): UIO[Unit] =
     Tracker.globalRef.get.flatMap { tracker =>
-      ZIO.succeed {
-        tracker.progressPoint(name)
-      }
+      ZIO.succeed(tracker.progressPoint(name))
     }
+
+  def enterLatencyPoint(name: String)(implicit trace: Trace): UIO[Unit] =
+    Tracker.globalRef.get.flatMap { tracker =>
+      ZIO.succeed(tracker.enterLatencyPoint(name))
+    }
+
+  def exitLatencyPoint(name: String)(implicit trace: Trace): UIO[Unit] =
+    Tracker.globalRef.get.flatMap { tracker =>
+      ZIO.succeed(tracker.exitLatencyPoint(name))
+    }
+
+  def latencyPointScoped(name: String)(implicit trace: Trace): URIO[Scope, Unit] =
+    ZIO.acquireRelease(enterLatencyPoint(name))(_ => exitLatencyPoint(name))
 }
