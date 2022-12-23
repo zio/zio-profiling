@@ -22,10 +22,12 @@ final case class ExperimentResult(
   duration: Long,
   effectiveDuration: Long,
   selectedSamples: Long,
-  throughputData: List[ThroughputData]
+  throughputData: List[ThroughputData],
+  latencyData: List[LatencyData]
 ) {
 
   lazy val render: List[String] =
-    s"experiment\tselected=$selected\tspeedup=$speedup\tduration=$effectiveDuration\tselected-samples=$selectedSamples" :: throughputData
-      .map(_.render)
+    s"experiment\tselected=$selected\tspeedup=$speedup\tduration=$effectiveDuration\tselected-samples=$selectedSamples" ::
+      throughputData.map(_.render) ++
+      latencyData.map(_.render)
 }

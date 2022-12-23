@@ -20,10 +20,19 @@ import zio._
 
 private trait Tracker {
   def progressPoint(name: String): Unit
+  def enterLatencyPoint(name: String): Unit
+  def exitLatencyPoint(name: String): Unit
 }
 
 private object Tracker {
-  final val noop: Tracker = _ => ()
+  final val noop: Tracker = new Tracker {
+    def progressPoint(name: String): Unit = ()
+
+    def enterLatencyPoint(name: String): Unit = ()
+
+    def exitLatencyPoint(name: String): Unit = ()
+
+  }
 
   private[causal] val globalRef: FiberRef[Tracker] =
     Unsafe.unsafe(implicit u => FiberRef.unsafe.make(Tracker.noop))

@@ -26,7 +26,9 @@ final private class Experiment(
   val startTime: Long,
   val duration: Long,
   val speedUp: Float,
-  private val progressPoints: ConcurrentHashMap[String, Int]
+  private val progressPoints: ConcurrentHashMap[String, Int],
+  private val latencyPointArrivals: ConcurrentHashMap[String, Int],
+  private val latencyPointDepartures: ConcurrentHashMap[String, Int]
 ) {
   @volatile private[this] var delays: Long            = 0
   @volatile private[this] var effectiveDuration: Long = duration
@@ -45,6 +47,16 @@ final private class Experiment(
     ()
   }
 
+  def addLatencyPointArrival(name: String): Unit = {
+    latencyPointArrivals.compute(name, (_, v) => v + 1)
+    ()
+  }
+
+  def addLatencyPointDeparture(name: String): Unit = {
+    latencyPointDepartures.compute(name, (_, v) => v + 1)
+    ()
+  }
+
   @silent("JavaConverters")
   def toResult(): ExperimentResult =
     ExperimentResult(
@@ -57,6 +69,13 @@ final private class Experiment(
         ThroughputData(
           name,
           delta
+        )
+      }.toList,
+      latencyPointArrivals.asScala.map { case (name, arrivals) =>
+        LatencyData(
+          name,
+          arrivals,
+          latencyPointDepartures.getOrDefault(name, 0)
         )
       }.toList
     )

@@ -8,8 +8,8 @@ import zio._
  *
  * {{{
  * for {
- *   _ <- ZIO.succeed(Thread.sleep(20)) <# "short" // code attributed to cost center `Root / "short"`
- *   _ <- ZIO.succeed(Thread.sleep(40)) <# "long" // code attributes to cost center `Root / "long"`
+ *   _ <- CostCenter.withChildCostCenter("short")(ZIO.succeed(Thread.sleep(20))) // code attributed to cost center `Root / "short"`
+ *   _ <- CostCenter.withChildCostCenter("long")(ZIO.succeed(Thread.sleep(40))) // code attributes to cost center `Root / "long"`
  * } yield ()
  * }}}
  */
