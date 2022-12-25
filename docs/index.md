@@ -6,23 +6,23 @@ sidebar_label: "ZIO Profiling"
 
 ZIO Profiling is a collection of different profilers for better understanding the runtime behavior of ZIO programs.
 
-Normal cpu profilers cannot really be used to profile code using an effect system.
-Profilers operating on a thread level will only see that threads are spending time in the evaluation loop of the
-effect system, producing profiles that are not useful for application developers.
+@PROJECT_BADGES@
 
-Instead, profiling a program written using an effect system requires a profiler that is aware of the effect system
-and can report where the effects were constructed / which user code the effect system is spending time on.
-ZIO profiling aims to be that library for the ZIO effect system.
+## Introduction
 
-The library focuses exclusively on cpu profiling. For heap profiling please consider using other tools such as async-profiler
-or VisualVM.
+Normal cpu profilers cannot really be used to profile code using an effect system. Profilers operating on a thread level will only see that threads are spending time in the evaluation loop of the effect system, producing profiles that are not useful for application developers.
+
+Instead, profiling a program written using an effect system requires a profiler that is aware of the effect system and can report where the effects were constructed / which user code the effect system is spending time on. ZIO profiling aims to be that library for the ZIO effect system.
+
+The library focuses exclusively on cpu profiling. For heap profiling please consider using other tools such as async-profiler or VisualVM.
 
 ## Installation
 
 ZIO Profiling requires you to add both the main library and optionally the compiler plugin to your build.sbt:
+
 ```scala
-libraryDependencies += "dev.zio" %% "zio-profiling" % zioProfilingVersion
-libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % zioProfilingVersion)
+libraryDependencies += "dev.zio" %% "zio-profiling" % "@VERSION@"
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
 ```
 
 ## Profiling an application and displaying a flamegraph
