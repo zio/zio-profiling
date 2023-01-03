@@ -1,7 +1,14 @@
 const sidebars = {
   sidebar: [
-    'index',
-    'resources',
+    {
+      type: "category",
+      label: "ZIO Profiling",
+      collapsed: false,
+      link: { type: "doc", id: "index" },
+      items: [
+        'resources'
+      ]
+    }
   ]
 };
 

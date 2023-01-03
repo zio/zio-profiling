@@ -79,5 +79,13 @@ lazy val docs = project
     publish / skip := true,
     moduleName     := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
-    scalacOptions -= "-Xfatal-warnings"
+    scalacOptions -= "-Xfatal-warnings",
+    projectName := "ZIO Profiling",
+    badgeInfo := Some(
+      BadgeInfo(
+        artifact = "zio-profiling_2.12",
+        projectStage = ProjectStage.Concept
+      )
+    ),
+    docsPublishBranch := "master"
   )
