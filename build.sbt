@@ -28,7 +28,7 @@ addCommandAlias("prepare", "fix; fmt")
 lazy val root = project
   .in(file("."))
   .settings(publish / skip := true)
-  .aggregate(core, taggingPlugin, examples, benchmarks)
+  .aggregate(core, taggingPlugin, examples, benchmarks, docs)
 
 lazy val core = project
   .in(file("zio-profiling"))
@@ -76,16 +76,12 @@ lazy val docs = project
   .dependsOn(core)
   .enablePlugins(WebsitePlugin)
   .settings(
-    publish / skip := true,
-    moduleName     := "zio-profiling-docs",
+    moduleName := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName := "ZIO Profiling",
-    badgeInfo := Some(
-      BadgeInfo(
-        artifact = "zio-profiling_2.12",
-        projectStage = ProjectStage.Concept
-      )
-    ),
-    docsPublishBranch := "master"
+    projectName                                := "ZIO Profiling",
+    mainModuleName                             := (core / moduleName).value,
+    projectStage                               := ProjectStage.Concept,
+    docsPublishBranch                          := "master",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core)
   )
