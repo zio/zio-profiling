@@ -90,7 +90,7 @@ final case class CausalProfiler(
           .flatMap(
             _.fold(
               _ => ZIO.dieMessage("Program completed before profiler could collect sufficient data"),
-              ZIO.succeedNow(_)
+              ZIO.succeed(_)
             )
           )
       }
