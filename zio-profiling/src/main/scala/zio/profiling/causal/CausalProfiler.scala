@@ -280,7 +280,7 @@ final case class CausalProfiler(
               }
             }
 
-            runSamplingStep.repeat(Schedule.spaced(samplingPeriod)).race(resultPromise.await).fork.as {
+            runSamplingStep.repeat[Any, Long](Schedule.spaced(samplingPeriod)).race(resultPromise.await).fork.as {
               new Supervisor[ProfilingResult] {
 
                 // first event in fiber lifecycle. No previous events to consider.
