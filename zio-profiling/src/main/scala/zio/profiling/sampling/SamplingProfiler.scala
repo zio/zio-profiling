@@ -73,6 +73,6 @@ final case class SamplingProfiler(
       }
     }
 
-    sampleFibers.repeat(Schedule.spaced(samplingPeriod)).delay(samplingPeriod).forkScoped.as(supervisor)
+    sampleFibers.repeat[Any, Long](Schedule.spaced(samplingPeriod)).delay(samplingPeriod).forkScoped.as(supervisor)
   }
 }
