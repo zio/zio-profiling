@@ -102,7 +102,7 @@ CausalProfiler(iterations = 100)
   .flatMap(_.renderToFile("profile.coz"))
 ```
 
-The file can be viewed using the [Coz Visualizer](https://plasma-umass.org/coz/) ([preview](img/example_causal_profile.png)).
+The file can be viewed using the [Coz Visualizer](docs/https://plasma-umass.org/coz/) ([preview](img/example_causal_profile.png)).
 As you can see, the profiler correctly tells you that you can get up to a 33% speedup by optimizing the `slow2` effect,
 but it's impossible to get a speedup any other way.
 
