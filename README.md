@@ -42,17 +42,17 @@ val slow = ZIO.succeed(Thread.sleep(600))
 val program = fast <&> slow
 ```
 
-In order to profile the program, we wrap it with the `profile` method of the tracing profiler. Once the effect has completed
+In order to profile the program, we wrap it with the `profile` method of the sampling profiler. Once the effect has completed
 this will yield the profiling result. We can either manipulate the result in Scala or render it in a number of standard
 formats. In this case we are going to write it out in a format supported by https://github.com/brendangregg/FlameGraph, so we
 can visualize it as a flamegraph.
 ```scala
-TracingProfiler
+SamplingProfiler
   .profile(program)
   .flatMap(_.stackCollapseToFile("profile.folded"))
 ```
 
-The resulting file can be converted to a svg using the flamegraph.pl script ([preview](img/example_tracing_profile.svg)):
+The resulting file can be converted to a svg using the flamegraph.pl script ([preview](img/example_sampling_profile.svg)):
 ```bash
 flamegraph.pl ./examples/profile.folded > profile.svg
 ```
@@ -61,7 +61,7 @@ flamegraph.pl ./examples/profile.folded > profile.svg
 
 ZIO Profiling includes experimental support for causal profiling inspired by [coz](https://github.com/plasma-umass/coz).
 
-Usage is similar to the tracing profiler, but instead of displaying the time spent running the program it will give recommendations
+Usage is similar to the sampling profiler, but instead of displaying the time spent running the program it will give recommendations
 which parts of the program to focus on during performance tuning for biggest effect. It achieves this by iteratively artificially speeding
 up parts of the program (by slowing down all parts running concurrently) and measuring the effect on overall runtime.
 
@@ -102,7 +102,7 @@ CausalProfiler(iterations = 100)
   .flatMap(_.renderToFile("profile.coz"))
 ```
 
-The file can be viewed using the [Coz Visualizer](https://plasma-umass.org/coz/) ([preview](img/example_causal_profile.png)).
+The file can be viewed using the [Coz Visualizer](docs/https://plasma-umass.org/coz/) ([preview](img/example_causal_profile.png)).
 As you can see, the profiler correctly tells you that you can get up to a 33% speedup by optimizing the `slow2` effect,
 but it's impossible to get a speedup any other way.
 
