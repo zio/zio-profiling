@@ -21,8 +21,8 @@ The library focuses exclusively on cpu profiling. For heap profiling please cons
 ZIO Profiling requires you to add both the main library and optionally the compiler plugin to your build.sbt:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-profiling" % "0.1.1"
-libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.1.1")
+libraryDependencies += "dev.zio" %% "zio-profiling" % "0.1.2"
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.1.2")
 ```
 
 ## Profiling an application and displaying a flamegraph
