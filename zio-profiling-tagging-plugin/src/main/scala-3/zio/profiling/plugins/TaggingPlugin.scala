@@ -11,7 +11,7 @@ import dotty.tools.dotc.plugins.{PluginPhase, StandardPlugin}
 import dotty.tools.dotc.transform.{Pickler, Staging}
 
 class TaggingPlugin extends StandardPlugin {
-  val name: String = "zio-profiling-tagging"
+  val name: String                 = "zio-profiling-tagging"
   override val description: String = "automatically tag zio effects"
 
   def init(options: List[String]): List[PluginPhase] = List(TaggingPhase)
