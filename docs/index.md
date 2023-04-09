@@ -128,6 +128,13 @@ val testEffect = ZIO.unit
 val testEffect = CostCenter.withChildCostCenter("foo.Foo.testEffect(Foo.scala:12)")(ZIO.unit)
 ```
 
+To enable the compiler plugin, add the following to the sbt module __containing the code you want to profile__.
+
+```scala
+compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
+
+```
+
 ## Jmh Support
 
 ZIO Profiling offers an integration with the Java Microbenchmark Harness (JMH). In order to profile a jmh benchmark, first ensure that the sources are properly tagged using the tagging plugin. Next, add a dependency to the jmh module to your benchmarking module:
