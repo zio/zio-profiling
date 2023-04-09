@@ -1,13 +1,6 @@
 package zio.profiling.sampling
 
-import zio.Unsafe.unsafe
 import zio._
-import zio.profiling.CostCenter
-
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
-import scala.collection.immutable.SortedSet
-import scala.jdk.CollectionConverters._
 
 final case class SamplingProfiler(
   samplingPeriod: Duration = 10.millis
@@ -24,55 +17,24 @@ final case class SamplingProfiler(
     } yield result
   }
 
-  val makeSupervisor: URIO[Scope, Supervisor[ProfilingResult]] = {
-    val fibersRef   = new AtomicReference[SortedSet[Fiber.Runtime[Any, Any]]](SortedSet.empty)
-    val costCenters = new ConcurrentHashMap[CostCenter, Long]()
+  val makeSupervisor: URIO[Scope, SamplingProfilerSupervisor] = {
+    val supervisor = new SamplingProfilerSupervisor()
 
-    val sampleFibers = ZIO.succeed {
-      fibersRef.get().foreach { fiber =>
-        val cc = unsafe(implicit u => CostCenter.getCurrentUnsafe(fiber))
-        costCenters.put(cc, costCenters.getOrDefault(cc, 0) + 1)
-      }
-    }
-
-    val supervisor = new Supervisor[ProfilingResult] {
-      def value(implicit trace: Trace): UIO[ProfilingResult] = ZIO.succeed {
-        val entries = costCenters.entrySet().asScala.map { entry =>
-          ProfilingResult.Entry(entry.getKey(), entry.getValue())
-        }
-        ProfilingResult(entries.toList)
-      }
-
-      def onStart[R, E, A](
-        environment: ZEnvironment[R],
-        effect: ZIO[R, E, A],
-        parent: Option[Fiber.Runtime[Any, Any]],
-        fiber: Fiber.Runtime[E, A]
-      )(implicit unsafe: Unsafe): Unit =
-        onResume(fiber)
-
-      def onEnd[R, E, A](value: Exit[E, A], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit =
-        onSuspend(fiber)
-
-      override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-        var loop = true
-        while (loop) {
-          val original = fibersRef.get
-          val updated  = original + fiber
-          loop = !fibersRef.compareAndSet(original, updated)
-        }
-      }
-
-      override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-        var loop = true
-        while (loop) {
-          val original = fibersRef.get
-          val updated  = original - fiber
-          loop = !fibersRef.compareAndSet(original, updated)
-        }
-      }
-    }
-
-    sampleFibers.repeat[Any, Long](Schedule.spaced(samplingPeriod)).delay(samplingPeriod).forkScoped.as(supervisor)
+    ZIO
+      .succeed(supervisor.sample())
+      .repeat[Any, Long](Schedule.spaced(samplingPeriod))
+      .delay(samplingPeriod)
+      .forkScoped
+      .as(supervisor)
   }
+
+  /**
+   * Create a runtime that will profile all effects executed with it. Use `runtime.environment.get` in order to get a
+   * reference to the supervisor. Make sure to shut down the runtime when down.
+   */
+  def supervisedRuntime(implicit unsafe: Unsafe): Runtime.Scoped[SamplingProfilerSupervisor] = {
+    val layer = ZLayer.scoped[Any](makeSupervisor).flatMap(env => Runtime.addSupervisor(env.get).map(_ => env))
+    Runtime.unsafe.fromLayer(layer)
+  }
+
 }

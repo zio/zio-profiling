@@ -14,6 +14,7 @@ import dotty.tools.dotc.report
 import dotty.tools.dotc.core.Types.TypeRef
 import dotty.tools.dotc.ast.tpd.{TreeOps, Literal}
 import dotty.tools.dotc.ast.untpd.Mod.Given.apply
+import dotty.tools.dotc.core.Flags
 
 object TaggingPhase extends PluginPhase {
 
@@ -23,7 +24,7 @@ object TaggingPhase extends PluginPhase {
   override val runsBefore = Set(Staging.name)
 
   override def transformValDef(tree: tpd.ValDef)(using Context): tpd.Tree = tree match {
-    case ValDef(_, ZioTypeTree(t1, t2, t3), _) =>
+    case ValDef(_, ZioTypeTree(t1, t2, t3), _) if !tree.mods.flags.is(Flags.DeferredTerm) =>
       val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, t1, t2, t3)
       cpy.ValDef(tree)(rhs = transformedRhs)
     case _ =>
@@ -31,7 +32,7 @@ object TaggingPhase extends PluginPhase {
   }
 
   override def transformDefDef(tree: tpd.DefDef)(using Context): tpd.Tree = tree match {
-    case DefDef(_, _, tpt @ ZioTypeTree(t1, t2, t3), _) =>
+    case DefDef(_, _, tpt @ ZioTypeTree(t1, t2, t3), _) if !tree.mods.flags.is(Flags.DeferredTerm) =>
       val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, t1, t2, t3)
       cpy.DefDef(tree)(rhs = transformedRhs)
     case _ =>
