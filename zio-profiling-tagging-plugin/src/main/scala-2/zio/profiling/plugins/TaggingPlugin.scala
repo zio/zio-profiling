@@ -27,12 +27,12 @@ class TaggingPlugin(val global: Global) extends Plugin {
 
     class TaggingTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
       override def transform(tree: Tree): Tree = tree match {
-        case valDef @ ValDef(_, _, ZioTypeTree(t1, t2, t3), rhs) =>
+        case valDef @ ValDef(_, _, ZioTypeTree(t1, t2, t3), rhs) if isNonAbstract(valDef) =>
           val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, t1, t2, t3)
           val typedRhs       = localTyper.typed(transformedRhs)
           val updated        = treeCopy.ValDef(tree, valDef.mods, valDef.name, valDef.tpt, rhs = typedRhs)
           super.transform(updated)
-        case defDef @ DefDef(_, _, _, _, ZioTypeTree(t1, t2, t3), rhs) =>
+        case defDef @ DefDef(_, _, _, _, ZioTypeTree(t1, t2, t3), rhs) if isNonAbstract(defDef) =>
           val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, t1, t2, t3)
           val typedRhs       = localTyper.typed(transformedRhs)
           val updated =
@@ -41,6 +41,9 @@ class TaggingPlugin(val global: Global) extends Plugin {
         case _ =>
           super.transform(tree)
       }
+
+      private def isNonAbstract(tree: ValOrDefDef): Boolean =
+        !tree.mods.isDeferred
 
       private def descriptiveName(tree: Tree): String = {
         val fullName   = tree.symbol.fullNameString
