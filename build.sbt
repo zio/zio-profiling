@@ -28,7 +28,7 @@ addCommandAlias("prepare", "fix; fmt")
 lazy val root = project
   .in(file("."))
   .settings(publish / skip := true)
-  .aggregate(core, taggingPlugin, examples, benchmarks, docs)
+  .aggregate(core, jmh, taggingPlugin, examples, benchmarks, docs)
 
 lazy val core = project
   .in(file("zio-profiling"))
@@ -43,6 +43,16 @@ lazy val core = project
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
 
+lazy val jmh = project
+  .in(file("zio-profiling-jmh"))
+  .dependsOn(core)
+  .settings(
+    stdSettings("zio-profiling-jmh"),
+    libraryDependencies ++= Seq(
+      "org.openjdk.jmh" % "jmh-core" % jmhVersion
+    )
+  )
+
 lazy val taggingPlugin = project
   .in(file("zio-profiling-tagging-plugin"))
   .settings(
@@ -51,15 +61,13 @@ lazy val taggingPlugin = project
     pluginDefinitionSettings
   )
 
-lazy val taggingPluginJar = taggingPlugin / Compile / packageTask
-
 lazy val examples = project
   .in(file("examples"))
   .dependsOn(core, taggingPlugin % "plugin")
   .settings(
     stdSettings("examples"),
     publish / skip := true,
-    scalacOptions += s"-Xplugin:${taggingPluginJar.value.getAbsolutePath}"
+    scalacOptions += s"-Xplugin:${(taggingPlugin / Compile / packageTask).value.getAbsolutePath}"
   )
 
 lazy val benchmarks = project

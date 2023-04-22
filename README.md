@@ -21,8 +21,8 @@ The library focuses exclusively on cpu profiling. For heap profiling please cons
 ZIO Profiling requires you to add both the main library and optionally the compiler plugin to your build.sbt:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-profiling" % "0.1.1"
-libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.1.1")
+libraryDependencies += "dev.zio" %% "zio-profiling" % "0.2.0"
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.2.0")
 ```
 
 ## Profiling an application and displaying a flamegraph
@@ -127,6 +127,76 @@ val testEffect = ZIO.unit
 
 val testEffect = CostCenter.withChildCostCenter("foo.Foo.testEffect(Foo.scala:12)")(ZIO.unit)
 ```
+
+To enable the compiler plugin, add the following to the sbt module __containing the code you want to profile__.
+
+```scala
+compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.2.0")
+
+```
+
+## Jmh Support
+
+ZIO Profiling offers an integration with the Java Microbenchmark Harness (JMH). In order to profile a jmh benchmark, first ensure that the sources are properly tagged using the tagging plugin. Next, add a dependency to the jmh module to your benchmarking module:
+```scala
+libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "0.2.0"
+```
+
+In your actual benchmarks, ensure that you are running ZIO effects using the methods in `zio.profiling.jmh.BenchmarkUtils`. A possible benchmark might look like this
+```scala
+package zio.redis.benchmarks.lists
+
+import org.openjdk.jmh.annotations._
+import zio.profiling.jmh.BenchmarkUtils
+import zio.redis._
+import zio.redis.benchmarks._
+import zio.{Scope => _, _}
+
+import java.util.concurrent.TimeUnit
+
+@State(Scope.Thread)
+@BenchmarkMode(Array(Mode.Throughput))
+@OutputTimeUnit(TimeUnit.SECONDS)
+@Measurement(iterations = 15)
+@Warmup(iterations = 15)
+@Fork(2)
+class BlMoveBenchmarks extends BenchmarkRuntime {
+
+  @Param(Array("500"))
+  var count: Int = _
+
+  private var items: List[String] = _
+
+  private val key = "test-list"
+
+  private def execute(query: ZIO[Redis, RedisError, Unit]): Unit =
+    BenchmarkUtils.unsafeRun(query.provideLayer(BenchmarkRuntime.Layer))
+
+  @Setup(Level.Trial)
+  def setup(): Unit = {
+    items = (0 to count).toList.map(_.toString)
+    execute(ZIO.serviceWithZIO[Redis](_.rPush(key, items.head, items.tail: _*).unit))
+  }
+
+  @TearDown(Level.Trial)
+  def tearDown(): Unit =
+    execute(ZIO.serviceWithZIO[Redis](_.del(key).unit))
+
+  @Benchmark
+  def zio(): Unit = execute(
+    ZIO.foreachDiscard(items)(_ =>
+      ZIO.serviceWithZIO[Redis](_.blMove(key, key, Side.Left, Side.Right, 1.second).returning[String])
+    )
+  )
+}
+```
+
+Once the benchmark is set up properly, you can specify the profiler from the jmh command line. Using sbt-jmh, it might look like this:
+```
+Jmh/run -i 3 -wi 3 -f1 -t1 -prof zio.profiling.jmh.JmhZioProfiler zio.redis.benchmarks.lists.BlMoveBenchmarks.zio
+```
+
+The profiler output will be written to a file in the directory the JVM has been invoked from.
 
 ## Documentation
 
