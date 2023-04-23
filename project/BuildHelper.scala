@@ -51,7 +51,7 @@ object BuildHelper {
           )
       },
       semanticdbEnabled := scalaVersion.value == defaulScalaVersion,
-      semanticdbOptions += "-P:semanticdb:synthetics:on",
+      semanticdbOptions ++= (if (scalaVersion.value != Scala3) List("-P:semanticdb:synthetics:on") else Nil),
       semanticdbVersion                                          := scalafixSemanticdb.revision,
       ThisBuild / scalafixScalaBinaryVersion                     := CrossVersion.binaryScalaVersion(scalaVersion.value),
       ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % organizeImportsVersion,
