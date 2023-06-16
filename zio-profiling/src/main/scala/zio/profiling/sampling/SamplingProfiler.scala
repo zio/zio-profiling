@@ -30,7 +30,7 @@ final case class SamplingProfiler(
 
   /**
    * Create a runtime that will profile all effects executed with it. Use `runtime.environment.get` in order to get a
-   * reference to the supervisor. Make sure to shut down the runtime when down.
+   * reference to the supervisor. Make sure to shut down the runtime when done.
    */
   def supervisedRuntime(implicit unsafe: Unsafe): Runtime.Scoped[SamplingProfilerSupervisor] = {
     val layer = ZLayer.scoped[Any](makeSupervisor).flatMap(env => Runtime.addSupervisor(env.get).map(_ => env))

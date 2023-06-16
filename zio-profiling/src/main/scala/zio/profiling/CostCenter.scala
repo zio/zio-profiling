@@ -1,6 +1,7 @@
 package zio.profiling
 
 import zio._
+import zio.stream.ZStream
 
 /**
  * A CostCenter allows grouping multiple source code locations into one unit for reporting and targeting purposes.
@@ -74,6 +75,14 @@ object CostCenter {
    */
   def withChildCostCenter[R, E, A](name: String)(zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     globalRef.locallyWith(_ / name)(zio)
+
+  /**
+   * Run an effect with a child cost center nested under the current one.
+   */
+  def withChildCostCenterStream[R, E, A](name: String)(stream: ZStream[R, E, A])(implicit
+    trace: Trace
+  ): ZStream[R, E, A] =
+    ZStream.scoped[R](globalRef.locallyScopedWith(_ / name)) *> stream
 
   private final val globalRef: FiberRef[CostCenter] =
     Unsafe.unsafe(implicit u => FiberRef.unsafe.make(CostCenter.Root, identity, (old, _) => old))
