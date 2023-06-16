@@ -27,23 +27,22 @@ class TaggingPlugin(val global: Global) extends Plugin {
 
     class TaggingTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
       override def transform(tree: Tree): Tree = tree match {
-        case valDef @ ValDef(_, _, ZioTypeTree(t1, t2, t3), rhs) if isNonAbstract(valDef) =>
-          val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, t1, t2, t3)
+        case valDef @ ValDef(_, _, TaggableTypeTree(taggingTarget), rhs) if rhs.nonEmpty =>
+          val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, taggingTarget)
           val typedRhs       = localTyper.typed(transformedRhs)
           val updated        = treeCopy.ValDef(tree, valDef.mods, valDef.name, valDef.tpt, rhs = typedRhs)
+
           super.transform(updated)
-        case defDef @ DefDef(_, _, _, _, ZioTypeTree(t1, t2, t3), rhs) if isNonAbstract(defDef) =>
-          val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, t1, t2, t3)
+        case defDef @ DefDef(_, _, _, _, TaggableTypeTree(taggingTarget), rhs) if rhs.nonEmpty =>
+          val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, taggingTarget)
           val typedRhs       = localTyper.typed(transformedRhs)
           val updated =
             treeCopy.DefDef(tree, defDef.mods, defDef.name, defDef.tparams, defDef.vparamss, defDef.tpt, rhs = typedRhs)
+
           super.transform(updated)
         case _ =>
           super.transform(tree)
       }
-
-      private def isNonAbstract(tree: ValOrDefDef): Boolean =
-        !tree.mods.isDeferred
 
       private def descriptiveName(tree: Tree): String = {
         val fullName   = tree.symbol.fullNameString
@@ -53,21 +52,37 @@ class TaggingPlugin(val global: Global) extends Plugin {
         s"$fullName($sourceFile:$sourceLine)"
       }
 
-      private def tagEffectTree(name: String, tree: Tree, t1: Type, t2: Type, t3: Type): Tree = {
+      private def tagEffectTree(name: String, tree: Tree, taggingTarget: TaggingTarget): Tree = {
         val costCenterModule = rootMirror.getRequiredModule("_root_.zio.profiling.CostCenter")
         val traceModule      = rootMirror.getRequiredModule("_root_.zio.Trace")
 
-        q"$costCenterModule.withChildCostCenter[$t1,$t2,$t3]($name)($tree)($traceModule.empty)"
+        taggingTarget match {
+          case ZioTaggingTarget(t1, t2, t3) =>
+            q"$costCenterModule.withChildCostCenter[$t1,$t2,$t3]($name)($tree)($traceModule.empty)"
+          case ZStreamTaggingTarget(t1, t2, t3) =>
+            println(name)
+            q"$costCenterModule.withChildCostCenterStream[$t1,$t2,$t3]($name)($tree)($traceModule.empty)"
+        }
+
       }
 
-      private object ZioTypeTree {
-        private def zioTypeRef: Type =
-          rootMirror.getRequiredClass("zio.ZIO").tpe
+      private sealed trait TaggingTarget
 
-        def unapply(tpt: Tree): Option[(Type, Type, Type)] =
+      private case class ZioTaggingTarget(rType: Type, eType: Type, aType: Type)     extends TaggingTarget
+      private case class ZStreamTaggingTarget(rType: Type, eType: Type, aType: Type) extends TaggingTarget
+
+      private object TaggableTypeTree {
+        private def zioTypeRef: Type = rootMirror.getRequiredClass("_root_.zio.ZIO").tpe
+
+        private def zStreamTypeRef: Type = rootMirror.getRequiredClass("_root_.zio.stream.ZStream").tpe
+
+        def unapply(tpt: Tree): Option[TaggingTarget] =
           tpt.tpe.dealias match {
-            case TypeRef(_, sym, t1 :: t2 :: t3 :: Nil) if sym == zioTypeRef.typeSymbol => Some((t1, t2, t3))
-            case _                                                                      => None
+            case TypeRef(_, sym, t1 :: t2 :: t3 :: Nil) if sym == zioTypeRef.typeSymbol =>
+              Some(ZioTaggingTarget(t1, t2, t3))
+            case TypeRef(_, sym, t1 :: t2 :: t3 :: Nil) if sym == zStreamTypeRef.typeSymbol =>
+              Some(ZStreamTaggingTarget(t1, t2, t3))
+            case _ => None
           }
 
       }

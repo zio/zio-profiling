@@ -36,6 +36,7 @@ lazy val core = project
     stdSettings("zio-profiling"),
     libraryDependencies ++= Seq(
       "dev.zio"                %% "zio"                     % zioVersion,
+      "dev.zio"                %% "zio-streams"             % zioVersion,
       "org.scala-lang.modules" %% "scala-collection-compat" % collectionCompatVersion,
       "dev.zio"                %% "zio-test"                % zioVersion % Test,
       "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test
