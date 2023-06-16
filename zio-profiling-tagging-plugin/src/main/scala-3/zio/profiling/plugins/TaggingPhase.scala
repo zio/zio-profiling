@@ -24,16 +24,16 @@ object TaggingPhase extends PluginPhase {
   override val runsBefore = Set(Staging.name)
 
   override def transformValDef(tree: tpd.ValDef)(using Context): tpd.Tree = tree match {
-    case ValDef(_, ZioTypeTree(t1, t2, t3), _) if !tree.mods.flags.is(Flags.DeferredTerm) =>
-      val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, t1, t2, t3)
+    case ValDef(_, TaggableTypeTree(taggingTarget), rhs) if !tree.rhs.isEmpty =>
+      val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, taggingTarget)
       cpy.ValDef(tree)(rhs = transformedRhs)
     case _ =>
       tree
   }
 
   override def transformDefDef(tree: tpd.DefDef)(using Context): tpd.Tree = tree match {
-    case DefDef(_, _, tpt @ ZioTypeTree(t1, t2, t3), _) if !tree.mods.flags.is(Flags.DeferredTerm) =>
-      val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, t1, t2, t3)
+    case DefDef(_, _, TaggableTypeTree(taggingTarget), rhs) if !tree.rhs.isEmpty =>
+      val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, taggingTarget)
       cpy.DefDef(tree)(rhs = transformedRhs)
     case _ =>
       tree
@@ -47,27 +47,46 @@ object TaggingPhase extends PluginPhase {
     s"$fullName($sourceFile:$sourceLine)"
   }
 
-  private def tagEffectTree(name: String, tree: tpd.Tree, t1: Type, t2: Type, t3: Type)(using Context): tpd.Tree = {
-    val costcenterSym = requiredModule("zio.profiling.CostCenter")
-    val withChildCostCenterSym = costcenterSym.requiredMethod("withChildCostCenter")
-
-    val traceSym = requiredModule("zio.Trace")
+  private def tagEffectTree(name: String, tree: tpd.Tree, taggingTarget: TaggingTarget)(using Context): tpd.Tree = {
+    val costcenterSym = requiredModule("_root_.zio.profiling.CostCenter")
+    val traceSym = requiredModule("_root_.zio.Trace")
     val emptyTraceSym = traceSym.requiredMethodRef("empty")
 
-    tpd.ref(withChildCostCenterSym)
-      .appliedToTypes(List(t1, t2, t3))
-      .appliedTo(tpd.Literal(Constant(name)))
-      .appliedTo(tree)
-      .appliedTo(tpd.ref(emptyTraceSym))
+    taggingTarget match {
+      case ZioTaggingTarget(t1, t2, t3) =>
+        val withChildCostCenterSym = costcenterSym.requiredMethod("withChildCostCenter")
+
+        tpd.ref(withChildCostCenterSym)
+          .appliedToTypes(List(t1, t2, t3))
+          .appliedTo(tpd.Literal(Constant(name)))
+          .appliedTo(tree)
+          .appliedTo(tpd.ref(emptyTraceSym))
+
+      case ZStreamTaggingTarget(t1, t2, t3) =>
+        val withChildCostCenterSym = costcenterSym.requiredMethod("withChildCostCenterStream")
+
+        tpd.ref(withChildCostCenterSym)
+          .appliedToTypes(List(t1, t2, t3))
+          .appliedTo(tpd.Literal(Constant(name)))
+          .appliedTo(tree)
+          .appliedTo(tpd.ref(emptyTraceSym))
+      }
   }
 
-  private object ZioTypeTree {
-    private def zioTypeRef(using Context): TypeRef =
-      requiredClassRef("zio.ZIO")
+  private sealed trait TaggingTarget
 
-    def unapply(tp: Tree[Type])(using Context): Option[(Type, Type, Type)] =
+  private case class ZioTaggingTarget(rType: Type, eType: Type, aType: Type)     extends TaggingTarget
+  private case class ZStreamTaggingTarget(rType: Type, eType: Type, aType: Type) extends TaggingTarget
+
+  private object TaggableTypeTree {
+    private def zioTypeRef(using Context): TypeRef = requiredClassRef("_root_.zio.ZIO")
+
+    private def zStreamTypeRef(using Context): TypeRef = requiredClassRef("_root_.stream.ZStream")
+
+    def unapply(tp: Tree[Type])(using Context): Option[TaggingTarget] =
       tp.tpe.dealias match {
-        case AppliedType(at, t1 :: t2 :: t3 :: Nil) if at.isRef(zioTypeRef.symbol) => Some((t1, t2, t3))
+        case AppliedType(at, t1 :: t2 :: t3 :: Nil) if at.isRef(zioTypeRef.symbol) => Some(ZioTaggingTarget(t1, t2, t3))
+        case AppliedType(at, t1 :: t2 :: t3 :: Nil) if at.isRef(zioTypeRef.symbol) => Some(ZStreamTaggingTarget(t1, t2, t3))
         case _ => None
       }
 

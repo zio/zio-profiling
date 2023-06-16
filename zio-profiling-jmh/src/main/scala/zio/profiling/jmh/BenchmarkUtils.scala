@@ -14,6 +14,11 @@ object BenchmarkUtils {
     if (customRt ne null) customRt else Runtime.default
   }
 
+  def getSupervisor(): Supervisor[Any] = {
+    val customRt = runtimeRef.get()
+    if (customRt ne null) customRt.environment.get[SamplingProfilerSupervisor] else Supervisor.none
+  }
+
   def unsafeRun[E, A](zio: ZIO[Any, E, A]): A =
     Unsafe.unsafe { implicit unsafe =>
       getRuntime().unsafe.run(zio).getOrThrowFiberFailure()
