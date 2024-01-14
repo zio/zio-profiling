@@ -13,6 +13,7 @@ jobs:
     if: (github.event.pull_request.user.login == 'scala-steward' || github.event.pull_request.user.login == 'renovate[bot]') && contains(github.event.pull_request.labels.*.name, 'automerge')
     permissions:
       contents: write
+      workflows: write # for renvate
     steps:
     - run: gh pr merge --merge --auto "$PR_URL"
       env:
