@@ -1,14 +1,20 @@
-name: autoupdate
+name: Autoupdate PRs
+
 on:
   push: {}
+  pull_request:
+    types:
+      - labeled
+
 jobs:
   autoupdate:
-    name: autoupdate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          PR_FILTER: "labelled"
-          PR_LABELS: "type: dependencies,autoupdate"
-          EXCLUDED_LABELS: "do-not-autoupdate"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_FILTER: labelled
+          PR_LABELS: autoupdate
+          MERGE_CONFLICT_ACTION: ignore
