@@ -1,0 +1,21 @@
+name: Enable Automerge
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - labeled
+
+jobs:
+  enable-auto-merge:
+    runs-on: ubuntu-latest
+    if: (github.event.pull_request.user.login == 'scala-steward' || github.event.pull_request.user.login == 'renovate[bot]') && contains(github.event.pull_request.labels.*.name, 'automerge')
+    permissions:
+      contents: write
+      workflows: write # for renvate
+    steps:
+    - run: gh pr merge --merge --auto "$PR_URL"
+      env:
+        PR_URL: ${{github.event.pull_request.html_url}}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
