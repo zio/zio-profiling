@@ -1,3 +1,2 @@
 automerge: 'update/*'
-autoupdate: 'update/*'
 dependency-update: 'update/*'
