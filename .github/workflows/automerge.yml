@@ -9,7 +9,7 @@ on:
 jobs:
   enable-auto-merge:
     runs-on: ubuntu-latest
-    if: (github.actor == 'scala-steward' || github.actor == 'renovate[bot]') && contains(github.event.pull_request.labels.*.name, 'automerge')
+    if: (github.event.pull_request.user.login == 'scala-steward' || github.event.pull_request.user.login == 'renovate[bot]') && contains(github.event.pull_request.labels.*.name, 'automerge')
     permissions:
       contents: write
     steps:
