@@ -5,7 +5,7 @@ env:
   JVM_OPTS: -XX:+PrintCommandLineFlags # for Java 8 only (sadly, it is not modern enough for JDK_JAVA_OPTIONS)
 
 on:
-  pull_request:
+  pull_request: {}
   push:
     branches: ['master']
   release:
