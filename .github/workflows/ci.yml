@@ -14,11 +14,11 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v4.0.0
         with:
           fetch-depth: 0
       - name: Setup Java
@@ -33,7 +33,7 @@ jobs:
         run: ./sbt check
 
   compile:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -42,7 +42,7 @@ jobs:
         scala: ['2.12.17', '2.13.10', '3.2.2']
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v4.0.0
         with:
           fetch-depth: 0
       - name: Setup Java
@@ -57,7 +57,7 @@ jobs:
         run: ./sbt ++${{ matrix.scala }}! compileSources
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -66,7 +66,7 @@ jobs:
         scala: ['2.12.17', '2.13.10', '3.2.2']
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v4.0.0
         with:
           fetch-depth: 0
       - name: Setup Java
@@ -81,11 +81,11 @@ jobs:
         run: ./sbt ++${{ matrix.scala }}! testAll
 
   publishLocal:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v4.0.0
       - name: Setup Java
         uses: actions/setup-java@v3.12.0
         with:
@@ -98,11 +98,11 @@ jobs:
         run: ./sbt +publishLocal
 
   website:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v4.0.0
       - name: Setup Java
         uses: actions/setup-java@v3.12.0
         with:
@@ -115,20 +115,20 @@ jobs:
         run: ./sbt docs/compileDocs
 
   ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [lint, compile, test, publishLocal, website]
     steps:
       - name: Aggregate outcomes
         run: echo "build succeeded"
 
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     needs: [ci]
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v4.0.0
         with:
           fetch-depth: 0
       - name: Setup Java
