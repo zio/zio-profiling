@@ -1,10 +1,7 @@
 name: Label PR
 
 on:
-  pull_request_target:
-    types:
-      - reopened
-      - opened
+  pull_request_target: {}
 
 jobs:
   pr-labeler:
@@ -13,7 +10,6 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: TimonVS/pr-labeler-action@v4
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          configuration-path: .github/pr-labeler.yml
+      - uses: srvaroa/labeler@v1
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
