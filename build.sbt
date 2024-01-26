@@ -91,6 +91,5 @@ lazy val docs = project
     projectName                                := "ZIO Profiling",
     mainModuleName                             := (core / moduleName).value,
     projectStage                               := ProjectStage.Concept,
-    docsPublishBranch                          := "master",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core)
   )
