@@ -208,7 +208,7 @@ For the general guidelines, see ZIO [contributor's guide](https://zio.dev/contri
 
 ## Code of Conduct
 
-See the [Code of Conduct](https://zio.dev/about/code-of-conduct)
+See the [Code of Conduct](https://zio.dev/code-of-conduct/)
 
 ## Support
 
