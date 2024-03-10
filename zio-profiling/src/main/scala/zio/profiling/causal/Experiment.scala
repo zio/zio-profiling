@@ -16,8 +16,6 @@
 
 package zio.profiling.causal
 
-import com.github.ghik.silencer.silent
-
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
 
@@ -57,7 +55,6 @@ final private class Experiment(
     ()
   }
 
-  @silent("JavaConverters")
   def toResult(): ExperimentResult =
     ExperimentResult(
       candidate,

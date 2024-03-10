@@ -60,7 +60,6 @@ class TaggingPlugin(val global: Global) extends Plugin {
           case ZioTaggingTarget(t1, t2, t3) =>
             q"$costCenterModule.withChildCostCenter[$t1,$t2,$t3]($name)($tree)($traceModule.empty)"
           case ZStreamTaggingTarget(t1, t2, t3) =>
-            println(name)
             q"$costCenterModule.withChildCostCenterStream[$t1,$t2,$t3]($name)($tree)($traceModule.empty)"
         }
 

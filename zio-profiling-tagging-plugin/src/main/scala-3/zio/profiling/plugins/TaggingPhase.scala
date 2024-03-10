@@ -86,7 +86,7 @@ object TaggingPhase extends PluginPhase {
     def unapply(tp: Tree[Type])(using Context): Option[TaggingTarget] =
       tp.tpe.dealias match {
         case AppliedType(at, t1 :: t2 :: t3 :: Nil) if at.isRef(zioTypeRef.symbol) => Some(ZioTaggingTarget(t1, t2, t3))
-        case AppliedType(at, t1 :: t2 :: t3 :: Nil) if at.isRef(zioTypeRef.symbol) => Some(ZStreamTaggingTarget(t1, t2, t3))
+        case AppliedType(at, t1 :: t2 :: t3 :: Nil) if at.isRef(zStreamTypeRef.symbol) => Some(ZStreamTaggingTarget(t1, t2, t3))
         case _ => None
       }
 
