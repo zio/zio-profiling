@@ -3,7 +3,6 @@ import Keys._
 import sbtbuildinfo._
 import BuildInfoKeys._
 import scalafix.sbt.ScalafixPlugin.autoImport._
-import Dependencies.{silencerVersion, organizeImportsVersion}
 
 object BuildHelper {
   private val versions: Map[String, String] = {
@@ -39,25 +38,13 @@ object BuildHelper {
       crossScalaVersions       := List(Scala212, Scala213, Scala3),
       ThisBuild / scalaVersion := defaultScalaVersion,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
-      libraryDependencies ++= {
-        if (scalaVersion.value == Scala3)
-          Seq(
-            "com.github.ghik" % s"silencer-lib_$Scala213" % silencerVersion % Provided
-          )
-        else
-          Seq(
-            "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full,
-            compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full)
-          )
-      },
-      semanticdbEnabled := scalaVersion.value == defaultScalaVersion,
+      semanticdbEnabled        := scalaVersion.value == defaultScalaVersion,
       semanticdbOptions ++= (if (scalaVersion.value != Scala3) List("-P:semanticdb:synthetics:on") else Nil),
-      semanticdbVersion                                          := scalafixSemanticdb.revision,
-      ThisBuild / scalafixScalaBinaryVersion                     := CrossVersion.binaryScalaVersion(scalaVersion.value),
-      ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % organizeImportsVersion,
-      Compile / fork                                             := true,
-      Test / fork                                                := true,
-      Test / parallelExecution                                   := true,
+      semanticdbVersion                      := scalafixSemanticdb.revision,
+      ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
+      Compile / fork                         := true,
+      Test / fork                            := true,
+      Test / parallelExecution               := true,
       incOptions ~= (_.withLogRecompileOnMacro(false)),
       autoAPIMappings  := true,
       buildInfoKeys    := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
