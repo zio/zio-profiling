@@ -41,9 +41,9 @@ private[causal] object FiberState {
     val state = new FiberState(
       new AtomicLong(inheritedDelay),
       CostCenter.getCurrentUnsafe(fiber),
-      true,
-      false,
-      false,
+      running = true,
+      lastEffectWasStateful = false,
+      inAsync = false,
       0
     )
     state
