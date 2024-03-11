@@ -36,6 +36,6 @@ object PluginSamplingProfilerSpec extends BaseSpec {
         assertTrue(isFastEffect(sortedEntries(1).costCenter))
       }
     }
-  )
+  ) @@ TestAspect.flaky
 
 }

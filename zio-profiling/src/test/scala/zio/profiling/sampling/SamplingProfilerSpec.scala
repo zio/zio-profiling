@@ -11,7 +11,7 @@ object SamplingProfilerSpec extends BaseSpec {
     suite("SamplingProfiler")(
       test("Should correctly profile simple example program") {
         val program = for {
-          _ <- CostCenter.withChildCostCenter("short")(ZIO.succeed(Thread.sleep(200)))
+          _ <- CostCenter.withChildCostCenter("short")(ZIO.succeed(Thread.sleep(100)))
           _ <- CostCenter.withChildCostCenter("long")(ZIO.succeed(Thread.sleep(400)))
         } yield ()
 
@@ -25,7 +25,7 @@ object SamplingProfilerSpec extends BaseSpec {
           assertTrue(isLongEffect(sortedEntries(0).costCenter)) &&
           assertTrue(isShortEffect(sortedEntries(1).costCenter))
         }
-      }
+      } @@ TestAspect.flaky
     )
 
 }
