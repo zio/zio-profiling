@@ -3,7 +3,7 @@ package zio.profiling.examples
 import zio._
 import zio.profiling.sampling._
 
-object PresentationExample extends ZIOAppDefault {
+object SamplingProfilerSimpleExample extends ZIOAppDefault {
   def run: URIO[Any, ExitCode] = {
 
     val fast = ZIO.succeed(Thread.sleep(400))

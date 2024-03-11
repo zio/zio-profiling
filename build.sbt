@@ -15,8 +15,8 @@ inThisBuild(
   )
 )
 
-addCommandAlias("compileSources", "core/Test/compile; taggingPlugin/compile; examples/compile")
-addCommandAlias("testAll", "core/test")
+addCommandAlias("compileSources", "core/Test/compile; taggingPlugin/compile; taggingPluginTests/compile; examples/compile; benchmarks/compiile;")
+addCommandAlias("testAll", "core/test; taggingPluginTests/test")
 
 addCommandAlias("check", "fixCheck; fmtCheck")
 addCommandAlias("fix", "scalafixAll")
@@ -28,7 +28,7 @@ addCommandAlias("prepare", "fix; fmt")
 lazy val root = project
   .in(file("."))
   .settings(publish / skip := true)
-  .aggregate(core, jmh, taggingPlugin, examples, benchmarks, docs)
+  .aggregate(core, jmh, taggingPlugin, taggingPluginTests, examples, benchmarks, docs)
 
 lazy val core = project
   .in(file("zio-profiling"))
@@ -62,6 +62,20 @@ lazy val taggingPlugin = project
     pluginDefinitionSettings
   )
 
+lazy val taggingPluginTests = project
+  .in(file("zio-profiling-tagging-plugin-tests"))
+  .dependsOn(core, taggingPlugin % "plugin")
+  .settings(
+    stdSettings("zio-profiling-tagging-plugin-tests"),
+    publish / skip := true,
+    Compile / scalacOptions += s"-Xplugin:${(taggingPlugin / Compile / packageTask).value.getAbsolutePath}",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-test"     % zioVersion % Test,
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
+    ),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+  )
+
 lazy val examples = project
   .in(file("examples"))
   .dependsOn(core, taggingPlugin % "plugin")
@@ -76,7 +90,7 @@ lazy val benchmarks = project
   .dependsOn(core)
   .enablePlugins(JmhPlugin)
   .settings(
-    stdSettings("examples"),
+    stdSettings("benchmarks"),
     publish / skip := true
   )
 

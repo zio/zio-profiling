@@ -3,6 +3,8 @@ package zio.profiling
 import zio._
 import zio.stream.ZStream
 
+import scala.util.matching.Regex
+
 /**
  * A CostCenter allows grouping multiple source code locations into one unit for reporting and targeting purposes.
  * Instead of relying on a function call hierarchy to identify a location, zio-profiling relies on manual tagging.
@@ -51,6 +53,14 @@ sealed trait CostCenter { self =>
   final def hasParent(name: String): Boolean = self match {
     case Root                   => false
     case Child(parent, current) => current == name || parent.hasParent(name)
+  }
+
+  /**
+   * Check whether this cost center has a parent with a name matching the given regex.
+   */
+  final def hasParentMatching(regex: Regex): Boolean = self match {
+    case Root                   => false
+    case Child(parent, current) => regex.matches(current) || parent.hasParentMatching(regex)
   }
 }
 

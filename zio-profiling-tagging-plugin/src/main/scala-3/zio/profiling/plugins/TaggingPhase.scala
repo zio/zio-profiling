@@ -14,7 +14,6 @@ import dotty.tools.dotc.report
 import dotty.tools.dotc.core.Types.TypeRef
 import dotty.tools.dotc.ast.tpd.{TreeOps, Literal}
 import dotty.tools.dotc.ast.untpd.Mod.Given.apply
-import dotty.tools.dotc.core.Flags
 
 object TaggingPhase extends PluginPhase {
 
@@ -23,12 +22,14 @@ object TaggingPhase extends PluginPhase {
   override val runsAfter = Set(Pickler.name)
   override val runsBefore = Set(Staging.name)
 
-  override def transformValDef(tree: tpd.ValDef)(using Context): tpd.Tree = tree match {
-    case ValDef(_, TaggableTypeTree(taggingTarget), rhs) if !tree.rhs.isEmpty =>
-      val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, taggingTarget)
-      cpy.ValDef(tree)(rhs = transformedRhs)
-    case _ =>
-      tree
+  override def transformValDef(tree: tpd.ValDef)(using Context): tpd.Tree = {
+    tree match {
+      case ValDef(_, TaggableTypeTree(taggingTarget), rhs) if !tree.rhs.isEmpty =>
+        val transformedRhs = tagEffectTree(descriptiveName(tree), tree.rhs, taggingTarget)
+        cpy.ValDef(tree)(rhs = transformedRhs)
+      case _ =>
+        tree
+    }
   }
 
   override def transformDefDef(tree: tpd.DefDef)(using Context): tpd.Tree = tree match {
@@ -48,8 +49,8 @@ object TaggingPhase extends PluginPhase {
   }
 
   private def tagEffectTree(name: String, tree: tpd.Tree, taggingTarget: TaggingTarget)(using Context): tpd.Tree = {
-    val costcenterSym = requiredModule("_root_.zio.profiling.CostCenter")
-    val traceSym = requiredModule("_root_.zio.Trace")
+    val costcenterSym = requiredModule("zio.profiling.CostCenter")
+    val traceSym = requiredModule("zio.Trace")
     val emptyTraceSym = traceSym.requiredMethodRef("empty")
 
     taggingTarget match {
@@ -79,9 +80,9 @@ object TaggingPhase extends PluginPhase {
   private case class ZStreamTaggingTarget(rType: Type, eType: Type, aType: Type) extends TaggingTarget
 
   private object TaggableTypeTree {
-    private def zioTypeRef(using Context): TypeRef = requiredClassRef("_root_.zio.ZIO")
+    private def zioTypeRef(using Context): TypeRef = requiredClassRef("zio.ZIO")
 
-    private def zStreamTypeRef(using Context): TypeRef = requiredClassRef("_root_.stream.ZStream")
+    private def zStreamTypeRef(using Context): TypeRef = requiredClassRef("stream.ZStream")
 
     def unapply(tp: Tree[Type])(using Context): Option[TaggingTarget] =
       tp.tpe.dealias match {
