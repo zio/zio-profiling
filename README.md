@@ -21,8 +21,8 @@ The library focuses exclusively on cpu profiling. For heap profiling please cons
 ZIO Profiling requires you to add both the main library and optionally the compiler plugin to your build.sbt:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-profiling" % "0.2.1"
-libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.2.1")
+libraryDependencies += "dev.zio" %% "zio-profiling" % "0.3.0"
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.3.0")
 ```
 
 ## Profiling an application and displaying a flamegraph
@@ -131,7 +131,7 @@ val testEffect = CostCenter.withChildCostCenter("foo.Foo.testEffect(Foo.scala:12
 To enable the compiler plugin, add the following to the sbt module __containing the code you want to profile__.
 
 ```scala
-compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.2.1")
+compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.3.0")
 
 ```
 
@@ -139,7 +139,7 @@ compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.2.1")
 
 ZIO Profiling offers an integration with the Java Microbenchmark Harness (JMH). In order to profile a jmh benchmark, first ensure that the sources are properly tagged using the tagging plugin. Next, add a dependency to the jmh module to your benchmarking module:
 ```scala
-libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "0.2.1"
+libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "0.3.0"
 ```
 
 In your actual benchmarks, ensure that you are running ZIO effects using the methods in `zio.profiling.jmh.BenchmarkUtils`. A possible benchmark might look like this
