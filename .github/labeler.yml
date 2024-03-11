@@ -1,6 +1,6 @@
 version: 1
 labels:
 - label: "automerge"
-  authors: ["scala-steward", "github-actions[bot]", "app/renovate"]
+  authors: ["scala-steward", "app/renovate"]
 - label: "auto-approve"
   authors: ["scala-steward", "app/renovate"]
