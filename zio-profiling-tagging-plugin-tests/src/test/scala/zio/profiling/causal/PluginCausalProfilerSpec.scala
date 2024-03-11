@@ -17,8 +17,6 @@ object PluginSamplingProfilerSpec extends BaseSpec {
       )
       val program = (ProfilerExamples.zioProgram *> CausalProfiler.progressPoint("done")).forever
       Live.live(profiler.profile(program)).map { result =>
-        println(result)
-
         def isSlowEffect(location: CostCenter) =
           location.hasParentMatching("zio\\.profiling\\.ProfilerExamples\\.slow\\(.*\\)".r)
         def isFastEffect(location: CostCenter) =

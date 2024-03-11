@@ -16,42 +16,20 @@ import scala.util.matching.Regex
  * } yield ()
  * }}}
  */
-sealed trait CostCenter { self =>
-  import CostCenter._
+final case class CostCenter(locations: Chunk[String]) {
+  def render: String = locations.mkString(";")
 
-  final def render: String =
-    self match {
-      case Root                => ""
-      case Child(Root, name)   => name
-      case Child(parent, name) => s"${parent.render};$name"
-    }
-
-  final def location: Option[String] = self match {
-    case Root              => None
-    case Child(_, current) => Some(current)
-  }
-
-  final def isRoot: Boolean = self match {
-    case Root => true
-    case _    => false
-  }
+  def isRoot: Boolean = locations.isEmpty
 
   /**
    * Create a child cost center that is nested under this one.
    */
-  final def /(location: String): CostCenter = self match {
-    case Root => Child(Root, location)
-    case Child(_, current) =>
-      if (current == location)
-        self
-      else
-        Child(self, location)
-  }
+  def /(location: String): CostCenter = CostCenter(locations :+ location)
 
-  final def isChildOf(other: CostCenter): Boolean = self == other || (self match {
-    case Root             => false
-    case Child(parent, _) => parent.isChildOf(other)
-  })
+  def location: Option[String] = locations.lastOption
+
+  def isChildOf(other: CostCenter): Boolean =
+    locations.startsWith(other.locations)
 
   /**
    * Check whether this cost center has a parent with a given name.
@@ -62,23 +40,22 @@ sealed trait CostCenter { self =>
    * (Root / "foo" / "bar").hasParent("baz") // false
    * }}}
    */
-  final def hasParent(name: String): Boolean = self match {
-    case Root                   => false
-    case Child(parent, current) => current == name || parent.hasParent(name)
-  }
+  def hasParent(name: String): Boolean =
+    locations.contains(name)
 
   /**
    * Check whether this cost center has a parent with a name matching the given regex.
    */
-  final def hasParentMatching(regex: Regex): Boolean = self match {
-    case Root                   => false
-    case Child(parent, current) => regex.findFirstIn(current).nonEmpty || parent.hasParentMatching(regex)
-  }
+  def hasParentMatching(regex: Regex): Boolean =
+    locations.exists(regex.findFirstIn(_).nonEmpty)
 }
 
 object CostCenter {
-  case object Root                                            extends CostCenter
-  final case class Child(parent: CostCenter, current: String) extends CostCenter
+
+  /**
+   * The root cost center.
+   */
+  val Root: CostCenter = CostCenter(Chunk.empty)
 
   /**
    * Get the current cost center this fiber is executing in.

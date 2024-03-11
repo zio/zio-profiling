@@ -82,7 +82,7 @@ object TaggingPhase extends PluginPhase {
   private object TaggableTypeTree {
     private def zioTypeRef(using Context): TypeRef = requiredClassRef("zio.ZIO")
 
-    private def zStreamTypeRef(using Context): TypeRef = requiredClassRef("stream.ZStream")
+    private def zStreamTypeRef(using Context): TypeRef = requiredClassRef("zio.stream.ZStream")
 
     def unapply(tp: Tree[Type])(using Context): Option[TaggingTarget] =
       tp.tpe.dealias match {
