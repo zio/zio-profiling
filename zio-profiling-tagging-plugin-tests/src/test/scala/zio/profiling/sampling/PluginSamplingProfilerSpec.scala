@@ -1,11 +1,11 @@
 package zio.profiling.sampling
 
-import zio.profiling.{CostCenter, ProfilerExamples}
+import zio.Scope
+import zio.profiling.{BaseSpec, CostCenter, ProfilerExamples}
 import zio.test.Assertion.{hasSize, isGreaterThanEqualTo}
 import zio.test._
-import zio.Scope
 
-object PluginSamplingProfilerSpec extends ZIOSpecDefault {
+object PluginSamplingProfilerSpec extends BaseSpec {
 
   def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("PluginSamplingProfiler")(
     test("Should correctly profile simple example program") {

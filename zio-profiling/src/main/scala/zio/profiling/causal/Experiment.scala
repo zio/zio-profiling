@@ -16,11 +16,13 @@
 
 package zio.profiling.causal
 
+import zio.profiling.CostCenter
+
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
 
 final private class Experiment(
-  val candidate: String,
+  val candidate: CostCenter,
   val startTime: Long,
   val duration: Long,
   val speedUp: Float,

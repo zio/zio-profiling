@@ -192,56 +192,55 @@ final case class CausalProfiler(
                   val iterator   = fibers.values().iterator()
 
                   while (experiment == null && iterator.hasNext()) {
-                    val fiber = iterator.next()
-                    if (fiber.running) {
-                      fiber.costCenter.location.filter(candidateSelector).foreach { candidate =>
-                        results match {
-                          case previous :: _ =>
-                            // with a speedup of 100%, we expect the program to take twice as long
-                            def compensateSpeedup(original: Int): Int = (original * (2 - previous.speedup)).toInt
+                    val fiber     = iterator.next()
+                    val candidate = fiber.costCenter
+                    if (fiber.running && !candidate.isRoot && candidate.location.fold(false)(candidateSelector)) {
+                      results match {
+                        case previous :: _ =>
+                          // with a speedup of 100%, we expect the program to take twice as long
+                          def compensateSpeedup(original: Int): Int = (original * (2 - previous.speedup)).toInt
 
-                            val minDelta =
-                              if (previous.throughputData.isEmpty) 0
-                              else compensateSpeedup(previous.throughputData.map(_.delta).min)
+                          val minDelta =
+                            if (previous.throughputData.isEmpty) 0
+                            else compensateSpeedup(previous.throughputData.map(_.delta).min)
 
-                            val nextDuration =
-                              if (minDelta < experimentTargetSamples) {
-                                previous.duration * 2
-                              } else if (
-                                minDelta >= experimentTargetSamples * 2 && previous.duration >= minExperimentDurationNanos * 2
-                              ) {
-                                previous.duration / 2
-                              } else {
-                                previous.duration
-                              }
+                          val nextDuration =
+                            if (minDelta < experimentTargetSamples) {
+                              previous.duration * 2
+                            } else if (
+                              minDelta >= experimentTargetSamples * 2 && previous.duration >= minExperimentDurationNanos * 2
+                            ) {
+                              previous.duration / 2
+                            } else {
+                              previous.duration
+                            }
 
-                            experiment = new Experiment(
-                              candidate,
-                              now,
-                              nextDuration,
-                              selectSpeedUp(),
-                              new ConcurrentHashMap[String, Int](),
-                              new ConcurrentHashMap[String, Int](),
-                              new ConcurrentHashMap[String, Int]()
-                            )
-                          case Nil =>
-                            experiment = new Experiment(
-                              candidate,
-                              now,
-                              minExperimentDurationNanos,
-                              selectSpeedUp(),
-                              new ConcurrentHashMap[String, Int](),
-                              new ConcurrentHashMap[String, Int](),
-                              new ConcurrentHashMap[String, Int]()
-                            )
-                        }
+                          experiment = new Experiment(
+                            candidate,
+                            now,
+                            nextDuration,
+                            selectSpeedUp(),
+                            new ConcurrentHashMap[String, Int](),
+                            new ConcurrentHashMap[String, Int](),
+                            new ConcurrentHashMap[String, Int]()
+                          )
+                        case Nil =>
+                          experiment = new Experiment(
+                            candidate,
+                            now,
+                            minExperimentDurationNanos,
+                            selectSpeedUp(),
+                            new ConcurrentHashMap[String, Int](),
+                            new ConcurrentHashMap[String, Int](),
+                            new ConcurrentHashMap[String, Int]()
+                          )
                       }
                     }
                   }
                   if (experiment != null) {
                     samplingState = SamplingState.ExperimentInProgress(experiment, iteration, results)
                     logMessage(
-                      s"Starting experiment $iteration (costCenter: ${experiment.candidate}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration}ns)"
+                      s"Starting experiment $iteration (costCenter: ${experiment.candidate.render}, speedUp: ${experiment.speedUp}, duration: ${experiment.duration}ns)"
                     )
                   }
 
@@ -261,7 +260,7 @@ final case class CausalProfiler(
                     val iterator = fibers.values.iterator()
                     while (iterator.hasNext()) {
                       val fiber = iterator.next()
-                      if (fiber.running && fiber.costCenter.hasParent(experiment.candidate)) {
+                      if (fiber.running && fiber.costCenter.isChildOf(experiment.candidate)) {
                         val delayAmount = (experiment.speedUp * samplingPeriodNanos).toLong
                         fiber.localDelay.addAndGet(delayAmount)
                         globalDelay += delayAmount

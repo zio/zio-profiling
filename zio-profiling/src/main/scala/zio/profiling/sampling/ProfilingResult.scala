@@ -12,20 +12,8 @@ final case class ProfilingResult(entries: List[ProfilingResult.Entry]) {
    *
    * Example command: `flamegraph.pl profile.folded > profile.svg`
    */
-  def stackCollapse: List[String] = {
-    def renderCostCenter(costCenter: CostCenter): String = {
-      import CostCenter._
-      costCenter match {
-        case Root                => ""
-        case Child(Root, name)   => name
-        case Child(parent, name) => s"${renderCostCenter(parent)};$name"
-      }
-    }
-
-    entries.map { entry =>
-      s"${renderCostCenter(entry.costCenter)} ${entry.samples}"
-    }
-  }
+  def stackCollapse: List[String] =
+    entries.map(entry => s"${entry.costCenter.render} ${entry.samples}")
 
   /**
    * Convenience method to render the result using `stackCollapse` and write it to a file.

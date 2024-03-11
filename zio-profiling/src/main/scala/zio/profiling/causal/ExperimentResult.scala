@@ -16,8 +16,10 @@
 
 package zio.profiling.causal
 
+import zio.profiling.CostCenter
+
 final case class ExperimentResult(
-  selected: String,
+  selected: CostCenter,
   speedup: Float,
   duration: Long,
   effectiveDuration: Long,
@@ -26,8 +28,8 @@ final case class ExperimentResult(
   latencyData: List[LatencyData]
 ) {
 
-  lazy val render: List[String] =
-    s"experiment\tselected=$selected\tspeedup=$speedup\tduration=$effectiveDuration\tselected-samples=$selectedSamples" ::
+  def render: List[String] =
+    s"experiment\tselected=${selected.render}\tspeedup=$speedup\tduration=$effectiveDuration\tselected-samples=$selectedSamples" ::
       throughputData.map(_.render) ++
       latencyData.map(_.render)
 }

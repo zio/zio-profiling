@@ -19,6 +19,13 @@ import scala.util.matching.Regex
 sealed trait CostCenter { self =>
   import CostCenter._
 
+  final def render: String =
+    self match {
+      case Root                => ""
+      case Child(Root, name)   => name
+      case Child(parent, name) => s"${parent.render};$name"
+    }
+
   final def location: Option[String] = self match {
     case Root              => None
     case Child(_, current) => Some(current)
@@ -41,6 +48,11 @@ sealed trait CostCenter { self =>
         Child(self, location)
   }
 
+  final def isChildOf(other: CostCenter): Boolean = self == other || (self match {
+    case Root             => false
+    case Child(parent, _) => parent.isChildOf(other)
+  })
+
   /**
    * Check whether this cost center has a parent with a given name.
    *
@@ -60,7 +72,7 @@ sealed trait CostCenter { self =>
    */
   final def hasParentMatching(regex: Regex): Boolean = self match {
     case Root                   => false
-    case Child(parent, current) => regex.matches(current) || parent.hasParentMatching(regex)
+    case Child(parent, current) => regex.findFirstIn(current).nonEmpty || parent.hasParentMatching(regex)
   }
 }
 

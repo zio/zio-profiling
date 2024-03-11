@@ -15,7 +15,10 @@ inThisBuild(
   )
 )
 
-addCommandAlias("compileSources", "core/Test/compile; taggingPlugin/compile; taggingPluginTests/compile; examples/compile; benchmarks/compiile;")
+addCommandAlias(
+  "compileSources",
+  "core/Test/compile; taggingPlugin/compile; taggingPluginTests/compile; examples/compile; benchmarks/compile;"
+)
 addCommandAlias("testAll", "core/test; taggingPluginTests/test")
 
 addCommandAlias("check", "fixCheck; fmtCheck")
