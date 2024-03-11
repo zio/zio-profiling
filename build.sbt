@@ -11,7 +11,8 @@ inThisBuild(
     developers := List(
       Developer("jdegoes", "John De Goes", "john@degoes.net", url("http://degoes.net")),
       Developer("mschuwalow", "Maxim Schuwalow", "maxim.schuwalow@gmail.com", url("https://github.com/mschuwalow"))
-    )
+    ),
+    versionScheme := Some("early-semver")
   )
 )
 
