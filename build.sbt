@@ -9,7 +9,6 @@ inThisBuild(
     homepage     := Some(url("https://zio.dev/zio-profiling/")),
     licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers := List(
-      Developer("jdegoes", "John De Goes", "john@degoes.net", url("http://degoes.net")),
       Developer("mschuwalow", "Maxim Schuwalow", "maxim.schuwalow@gmail.com", url("https://github.com/mschuwalow"))
     ),
     versionScheme := Some("early-semver")
