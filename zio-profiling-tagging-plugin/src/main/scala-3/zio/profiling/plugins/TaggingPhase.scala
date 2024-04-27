@@ -15,7 +15,7 @@ import dotty.tools.dotc.core.Types.TypeRef
 import dotty.tools.dotc.ast.tpd.{TreeOps, Literal}
 import dotty.tools.dotc.ast.untpd.Mod.Given.apply
 
-object TaggingPhase extends PluginPhase {
+final class TaggingPhase extends PluginPhase {
 
   val phaseName = "zio-profiling-tagging"
 

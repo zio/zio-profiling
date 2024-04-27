@@ -14,5 +14,5 @@ class TaggingPlugin extends StandardPlugin {
   val name: String                 = "zio-profiling-tagging"
   override val description: String = "automatically tag zio effects"
 
-  def init(options: List[String]): List[PluginPhase] = List(TaggingPhase)
+  def init(options: List[String]): List[PluginPhase] = List(new TaggingPhase())
 }
