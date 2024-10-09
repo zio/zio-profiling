@@ -41,7 +41,6 @@ object BuildHelper {
       semanticdbEnabled        := scalaVersion.value == defaultScalaVersion,
       semanticdbOptions ++= (if (scalaVersion.value != Scala3) List("-P:semanticdb:synthetics:on") else Nil),
       semanticdbVersion                      := scalafixSemanticdb.revision,
-      ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
       Compile / fork                         := true,
       Test / fork                            := true,
       Test / parallelExecution               := true,
