@@ -30,7 +30,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check code formatting
-        run: ./sbt check
+        run: sbt check
 
   compile:
     runs-on: ubuntu-22.04
@@ -54,7 +54,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Compile sources
-        run: ./sbt ++${{ matrix.scala }}! compileSources
+        run: sbt ++${{ matrix.scala }}! compileSources
 
   test:
     runs-on: ubuntu-22.04
@@ -78,7 +78,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
-        run: ./sbt ++${{ matrix.scala }}! testAll
+        run: sbt ++${{ matrix.scala }}! testAll
 
   publishLocal:
     runs-on: ubuntu-22.04
@@ -95,7 +95,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check that building packages works
-        run: ./sbt +publishLocal
+        run: sbt +publishLocal
 
   website:
     runs-on: ubuntu-22.04
@@ -112,7 +112,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check Website Generation
-        run: ./sbt docs/compileDocs
+        run: sbt docs/compileDocs
 
   ci:
     runs-on: ubuntu-22.04
@@ -140,7 +140,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Release artifacts
-        run: ./sbt ci-release
+        run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
