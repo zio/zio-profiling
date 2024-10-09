@@ -279,113 +279,117 @@ final case class CausalProfiler(
               }
             }
 
-            runSamplingStep.repeat[Any, Long](Schedule.spaced(samplingPeriod)).race(resultPromise.await).fork.as {
-              new Supervisor[ProfilingResult] {
+            runSamplingStep
+              .repeat[Any, Long](Schedule.spaced(samplingPeriod))
+              .race[Any, Throwable, Any](resultPromise.await)
+              .fork
+              .as {
+                new Supervisor[ProfilingResult] {
 
-                // first event in fiber lifecycle. No previous events to consider.
-                override def onStart[R, E, A](
-                  environment: ZEnvironment[R],
-                  effect: ZIO[R, E, A],
-                  parent: Option[Fiber.Runtime[Any, Any]],
-                  fiber: Fiber.Runtime[E, A]
-                )(implicit unsafe: zio.Unsafe): Unit = {
-                  val parentDelay =
-                    parent.flatMap(f => Option(fibers.get(f.id)).map(_.localDelay.get())).getOrElse(globalDelay)
+                  // first event in fiber lifecycle. No previous events to consider.
+                  override def onStart[R, E, A](
+                    environment: ZEnvironment[R],
+                    effect: ZIO[R, E, A],
+                    parent: Option[Fiber.Runtime[Any, Any]],
+                    fiber: Fiber.Runtime[E, A]
+                  )(implicit unsafe: zio.Unsafe): Unit = {
+                    val parentDelay =
+                      parent.flatMap(f => Option(fibers.get(f.id)).map(_.localDelay.get())).getOrElse(globalDelay)
 
-                  fibers.put(fiber.id.id, FiberState.makeFor(fiber, parentDelay))
-                  ()
-                }
-
-                // previous events could be {onStart, onResume, onEffect}
-                override def onEnd[R, E, A](
-                  value: Exit[E, A],
-                  fiber: Fiber.Runtime[E, A]
-                )(implicit unsafe: zio.Unsafe): Unit = {
-                  val id    = fiber.id.id
-                  val state = fibers.get(id)
-                  if (state ne null) {
-                    state.running = false
-                    // no need to refresh tag as we are shutting down
-                    if (!value.isInterrupted) {
-                      delayFiber(state)
-                    }
-                    fibers.remove(id)
+                    fibers.put(fiber.id.id, FiberState.makeFor(fiber, parentDelay))
                     ()
                   }
-                }
 
-                // previous events could be {onStart, onResume, onEffect}
-                override def onEffect[E, A](fiber: Fiber.Runtime[E, A], effect: ZIO[_, _, _])(implicit
-                  unsafe: zio.Unsafe
-                ): Unit = {
-                  val id         = fiber.id.id
-                  var state      = fibers.get(id)
-                  var freshState = false
-
-                  if (state == null) {
-                    state = FiberState.makeFor(fiber, globalDelay)
-                    fibers.put(id, state)
-                    freshState = true
-                  } else if (state.lastEffectWasStateful) {
-                    state.refreshCostCenter(fiber)
-                    state.lastEffectWasStateful = false
-                  }
-
-                  effect match {
-                    case ZIO.Stateful(_, _) =>
-                      state.lastEffectWasStateful = true
-                    case ZIO.Sync(_, _) =>
-                      if (!freshState) {
-                        state.running = false
+                  // previous events could be {onStart, onResume, onEffect}
+                  override def onEnd[R, E, A](
+                    value: Exit[E, A],
+                    fiber: Fiber.Runtime[E, A]
+                  )(implicit unsafe: zio.Unsafe): Unit = {
+                    val id    = fiber.id.id
+                    val state = fibers.get(id)
+                    if (state ne null) {
+                      state.running = false
+                      // no need to refresh tag as we are shutting down
+                      if (!value.isInterrupted) {
                         delayFiber(state)
-                        state.running = true
                       }
-                    case ZIO.Async(_, _, _) =>
-                      state.preAsyncGlobalDelay = globalDelay
-                      state.inAsync = true
-                    case _ =>
+                      fibers.remove(id)
                       ()
+                    }
                   }
-                }
 
-                // previous events could be {onStart, onResume, onEffect}
-                override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-                  val id    = fiber.id.id
-                  val state = fibers.get(id)
-                  if (state ne null) {
-                    if (state.lastEffectWasStateful) {
-                      state.lastEffectWasStateful = false
+                  // previous events could be {onStart, onResume, onEffect}
+                  override def onEffect[E, A](fiber: Fiber.Runtime[E, A], effect: ZIO[_, _, _])(implicit
+                    unsafe: zio.Unsafe
+                  ): Unit = {
+                    val id         = fiber.id.id
+                    var state      = fibers.get(id)
+                    var freshState = false
+
+                    if (state == null) {
+                      state = FiberState.makeFor(fiber, globalDelay)
+                      fibers.put(id, state)
+                      freshState = true
+                    } else if (state.lastEffectWasStateful) {
                       state.refreshCostCenter(fiber)
+                      state.lastEffectWasStateful = false
                     }
-                    state.running = false
-                  } else {
-                    val newState = FiberState.makeFor(fiber, globalDelay)
-                    newState.running = false
-                    fibers.put(id, newState)
-                    ()
-                  }
-                }
 
-                // previous event can only be onSuspend
-                override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-                  val id    = fiber.id.id
-                  val state = fibers.get(id)
-                  if (state ne null) {
-                    state.running = true
-                    if (state.inAsync) {
-                      state.localDelay.addAndGet(globalDelay - state.preAsyncGlobalDelay)
-                      state.preAsyncGlobalDelay = 0
-                      state.inAsync = false
+                    effect match {
+                      case ZIO.Stateful(_, _) =>
+                        state.lastEffectWasStateful = true
+                      case ZIO.Sync(_, _) =>
+                        if (!freshState) {
+                          state.running = false
+                          delayFiber(state)
+                          state.running = true
+                        }
+                      case ZIO.Async(_, _, _) =>
+                        state.preAsyncGlobalDelay = globalDelay
+                        state.inAsync = true
+                      case _ =>
+                        ()
                     }
-                  } else {
-                    fibers.put(id, FiberState.makeFor(fiber, globalDelay))
-                    ()
                   }
-                }
 
-                def value(implicit trace: Trace): UIO[ProfilingResult] = resultPromise.await
+                  // previous events could be {onStart, onResume, onEffect}
+                  override def onSuspend[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+                    val id    = fiber.id.id
+                    val state = fibers.get(id)
+                    if (state ne null) {
+                      if (state.lastEffectWasStateful) {
+                        state.lastEffectWasStateful = false
+                        state.refreshCostCenter(fiber)
+                      }
+                      state.running = false
+                    } else {
+                      val newState = FiberState.makeFor(fiber, globalDelay)
+                      newState.running = false
+                      fibers.put(id, newState)
+                      ()
+                    }
+                  }
+
+                  // previous event can only be onSuspend
+                  override def onResume[E, A](fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+                    val id    = fiber.id.id
+                    val state = fibers.get(id)
+                    if (state ne null) {
+                      state.running = true
+                      if (state.inAsync) {
+                        state.localDelay.addAndGet(globalDelay - state.preAsyncGlobalDelay)
+                        state.preAsyncGlobalDelay = 0
+                        state.inAsync = false
+                      }
+                    } else {
+                      fibers.put(id, FiberState.makeFor(fiber, globalDelay))
+                      ()
+                    }
+                  }
+
+                  def value(implicit trace: Trace): UIO[ProfilingResult] = resultPromise.await
+                }
               }
-            }
           }
         }
       }
