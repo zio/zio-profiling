@@ -36,7 +36,7 @@ class TaggingPlugin(val global: Global) extends Plugin {
         case defDef @ DefDef(_, _, _, _, TaggableTypeTree(taggingTarget), rhs) if rhs.nonEmpty =>
           val transformedRhs = tagEffectTree(descriptiveName(tree), rhs, taggingTarget)
           val typedRhs       = localTyper.typed(transformedRhs)
-          val updated =
+          val updated        =
             treeCopy.DefDef(tree, defDef.mods, defDef.name, defDef.tparams, defDef.vparamss, defDef.tpt, rhs = typedRhs)
 
           super.transform(updated)
