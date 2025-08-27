@@ -7,7 +7,7 @@ addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.2")
 addSbtPlugin("de.heikoseeberger"                 % "sbt-header"       % "5.10.0")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.7.2")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"     % "2.5.5")
-addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.4.0-alpha.33")
+addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.4.0-alpha.34")
 addSbtPlugin("pl.project13.scala"                % "sbt-jmh"          % "0.4.7")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.10"
