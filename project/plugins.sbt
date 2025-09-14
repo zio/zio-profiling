@@ -4,7 +4,7 @@ addSbtPlugin("com.eed3si9n"                      % "sbt-buildinfo"    % "0.13.1"
 addSbtPlugin("com.github.sbt"                    % "sbt-ci-release"   % "1.11.2")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"       % "0.6.0")
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.2")
-addSbtPlugin("de.heikoseeberger"                 % "sbt-header"       % "5.10.0")
+addSbtPlugin("com.github.sbt"                    % "sbt-header"       % "5.11.0")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.7.2")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"     % "2.5.5")
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.4.0-alpha.34")
