@@ -3,6 +3,8 @@ import Keys.{`package` => packageTask}
 import BuildHelper._
 import Dependencies._
 
+import zio.sbt.githubactions.Step
+
 inThisBuild(
   List(
     organization := "dev.zio",
@@ -11,7 +13,18 @@ inThisBuild(
     developers   := List(
       Developer("mschuwalow", "Maxim Schuwalow", "maxim.schuwalow@gmail.com", url("https://github.com/mschuwalow"))
     ),
-    versionScheme := Some("early-semver")
+    versionScheme := Some("early-semver"),
+    // CI workflow generation (`sbt ciGenerateGithubWorkflow`)
+    ciEnabledBranches     := Seq("master"),
+    ciEnableScalaSteward  := false,
+    ciTargetJavaVersions  := Seq("11", "17", "21"),
+    ciTargetScalaVersions := Map(
+      "core"               -> Seq(Scala212, Scala213, Scala3),
+      "taggingPluginTests" -> Seq(Scala212, Scala213, Scala3)
+    ),
+    ciCheckArtifactsCompilationSteps := Seq(
+      Step.SingleStep(name = "Compile sources", run = Some("sbt --no-colors +compileSources"))
+    )
   )
 )
 
@@ -21,6 +34,7 @@ addCommandAlias(
 )
 addCommandAlias("testAll", "core/test; taggingPluginTests/test")
 
+addCommandAlias("lint", "check")
 addCommandAlias("check", "fixCheck; fmtCheck")
 addCommandAlias("fix", "scalafixAll")
 addCommandAlias("fixCheck", "scalafixAll --check")
@@ -71,7 +85,7 @@ lazy val taggingPluginTests = project
   .settings(
     stdSettings("zio-profiling-tagging-plugin-tests"),
     publish / skip := true,
-    Compile / scalacOptions += s"-Xplugin:${(taggingPlugin / Compile / packageTask).value.getAbsolutePath}",
+    Compile / scalacOptions += s"-Xplugin:${fileConverter.value.toPath((taggingPlugin / Compile / packageTask).value).toAbsolutePath}",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-test"     % zioVersion % Test,
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test
@@ -85,7 +99,7 @@ lazy val examples = project
   .settings(
     stdSettings("examples"),
     publish / skip := true,
-    scalacOptions += s"-Xplugin:${(taggingPlugin / Compile / packageTask).value.getAbsolutePath}"
+    scalacOptions += s"-Xplugin:${fileConverter.value.toPath((taggingPlugin / Compile / packageTask).value).toAbsolutePath}"
   )
 
 lazy val benchmarks = project
