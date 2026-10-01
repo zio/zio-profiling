@@ -1,7 +1,7 @@
 package zio.profiling.examples
 
+import zio._
 import zio.profiling.causal._
-import zio.{URIO, _}
 
 object CausalProfilerToyExample2 extends ZIOAppDefault {
 
@@ -18,9 +18,8 @@ object CausalProfilerToyExample2 extends ZIOAppDefault {
 
   def doUselessBackgroundWork: ZIO[Any, Nothing, Unit] = ZIO.succeed(Thread.sleep(30))
 
-  def run: URIO[Any, ExitCode] =
+  def run: Task[Unit] =
     CausalProfiler(iterations = 100)
       .profile(prog.forever)
       .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
-      .exitCode
 }

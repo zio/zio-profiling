@@ -3,8 +3,7 @@ package zio.profiling.plugins
 import scala.tools.nsc
 
 import nsc.Global
-import nsc.plugins.Plugin
-import nsc.plugins.PluginComponent
+import nsc.plugins.{Plugin, PluginComponent}
 import nsc.transform.{Transform, TypingTransformers}
 
 class TaggingPlugin(val global: Global) extends Plugin {

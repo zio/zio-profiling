@@ -10,7 +10,7 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
   val ProducerCount = 4
   val ConsumerCount = 20
 
-  def run: URIO[Any, ExitCode] = {
+  def run: Task[Unit] = {
     val program = Queue.bounded[Unit](QueueSize).flatMap { queue =>
       def producer =
         queue.offer(()).repeatN((Items / ProducerCount) - 1)
@@ -29,6 +29,5 @@ object CausalProfilerProducerConsumerExample extends ZIOAppDefault {
     CausalProfiler(iterations = 30, experimentTargetSamples = 5)
       .profile(program.forever)
       .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
-      .exitCode
   }
 }

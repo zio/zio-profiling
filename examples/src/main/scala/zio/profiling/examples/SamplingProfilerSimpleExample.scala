@@ -4,7 +4,7 @@ import zio._
 import zio.profiling.sampling._
 
 object SamplingProfilerSimpleExample extends ZIOAppDefault {
-  def run: URIO[Any, ExitCode] = {
+  def run: Task[Unit] = {
 
     val fast = ZIO.succeed(Thread.sleep(400))
 
@@ -15,6 +15,5 @@ object SamplingProfilerSimpleExample extends ZIOAppDefault {
     SamplingProfiler()
       .profile(program)
       .flatMap[Any, Throwable, Unit](_.stackCollapseToFile("profile.folded"))
-      .exitCode
   }
 }

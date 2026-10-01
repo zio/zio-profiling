@@ -5,30 +5,9 @@ import BuildInfoKeys._
 import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
-  private val versions: Map[String, String] = {
-    import org.snakeyaml.engine.v2.api.{Load, LoadSettings}
-
-    import java.util.{List => JList, Map => JMap}
-    import scala.jdk.CollectionConverters._
-
-    val doc = new Load(LoadSettings.builder().build())
-      .loadFromReader(scala.io.Source.fromFile(".github/workflows/ci.yml").bufferedReader())
-
-    val yaml = doc.asInstanceOf[JMap[String, JMap[String, JMap[String, JMap[String, JMap[String, JList[String]]]]]]]
-
-    val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
-
-    list.map { v =>
-      val vs  = v.split('.')
-      val len = if (vs(0) == "2") 2 else 1
-
-      (vs.take(len).mkString("."), v)
-    }.toMap
-  }
-
-  val Scala212 = versions("2.12")
-  val Scala213 = versions("2.13")
-  val Scala3   = versions("3")
+  val Scala212 = "2.12.20"
+  val Scala213 = "2.13.18"
+  val Scala3   = "3.3.5"
 
   val defaultScalaVersion = Scala213
 
@@ -45,8 +24,10 @@ object BuildHelper {
       Test / fork              := true,
       Test / parallelExecution := true,
       incOptions ~= (_.withLogRecompileOnMacro(false)),
-      autoAPIMappings  := true,
-      buildInfoKeys    := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
+      autoAPIMappings := true,
+      buildInfoKeys   := Seq(organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot).map(
+        BuildInfoKey(_)
+      ),
       buildInfoPackage := prjName
     )
 

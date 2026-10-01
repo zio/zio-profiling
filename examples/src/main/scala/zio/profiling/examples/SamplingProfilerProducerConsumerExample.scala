@@ -10,7 +10,7 @@ object SamplingProfilerProducerConsumerExample extends ZIOAppDefault {
   val ProducerCount = 1
   val ConsumerCount = 5
 
-  def run: URIO[Any, ExitCode] = {
+  def run: Task[Unit] = {
     def program(iterationRef: Ref[Int]) = Queue.bounded[Unit](QueueSize).flatMap { queue =>
       def producer =
         queue
@@ -33,6 +33,5 @@ object SamplingProfilerProducerConsumerExample extends ZIOAppDefault {
     SamplingProfiler()
       .profile(Ref.make(0).flatMap(program(_).repeatN(99)))
       .flatMap[Any, Throwable, Unit](_.stackCollapseToFile("profile.folded"))
-      .exitCode
   }
 }
