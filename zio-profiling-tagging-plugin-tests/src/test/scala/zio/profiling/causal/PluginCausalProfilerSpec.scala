@@ -7,7 +7,7 @@ import zio.test._
 
 object PluginSamplingProfilerSpec extends BaseSpec {
 
-  def spec = suite("PluginCausalProfiler")(
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("PluginCausalProfiler")(
     test("Should correctly profile simple example program") {
       val profiler = CausalProfiler(
         iterations = 10,
