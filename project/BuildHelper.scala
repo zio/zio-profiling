@@ -6,7 +6,7 @@ import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
   val Scala212 = "2.12.20"
-  val Scala213 = "2.13.16"
+  val Scala213 = "2.13.18"
   val Scala3   = "3.3.5"
 
   val defaultScalaVersion = Scala213
@@ -24,8 +24,10 @@ object BuildHelper {
       Test / fork              := true,
       Test / parallelExecution := true,
       incOptions ~= (_.withLogRecompileOnMacro(false)),
-      autoAPIMappings  := true,
-      buildInfoKeys    := Seq(organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot).map(BuildInfoKey(_)),
+      autoAPIMappings := true,
+      buildInfoKeys   := Seq(organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot).map(
+        BuildInfoKey(_)
+      ),
       buildInfoPackage := prjName
     )
 

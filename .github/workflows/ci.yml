@@ -44,7 +44,7 @@ jobs:
     - name: Cache Dependencies
       uses: coursier/cache-action@v8.1.1
     - name: Compile sources
-      run: sbt --no-colors +compileSources
+      run: sbt --no-colors "++2.12.20! compileSources" "++2.13.18! compileSources" "++3.3.5! compileSources"
     - name: Check artifacts build process
       run: sbt --no-colors +publishLocal
     - name: Check website build process
@@ -82,15 +82,14 @@ jobs:
       fail-fast: false
       matrix:
         java:
-        - '11'
         - '17'
         - '21'
         scala-project:
         - ++2.12.20 core
-        - ++2.13.16 core
+        - ++2.13.18 core
         - ++3.3.5 core
         - ++2.12.20 taggingPluginTests
-        - ++2.13.16 taggingPluginTests
+        - ++2.13.18 taggingPluginTests
         - ++3.3.5 taggingPluginTests
     steps:
     - name: Install libuv

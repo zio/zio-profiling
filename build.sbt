@@ -17,13 +17,18 @@ inThisBuild(
     // CI workflow generation (`sbt ciGenerateGithubWorkflow`)
     ciEnabledBranches     := Seq("master"),
     ciEnableScalaSteward  := false,
-    ciTargetJavaVersions  := Seq("11", "17", "21"),
+    ciTargetJavaVersions  := Seq("17", "21"),
     ciTargetScalaVersions := Map(
       "core"               -> Seq(Scala212, Scala213, Scala3),
       "taggingPluginTests" -> Seq(Scala212, Scala213, Scala3)
     ),
     ciCheckArtifactsCompilationSteps := Seq(
-      Step.SingleStep(name = "Compile sources", run = Some("sbt --no-colors +compileSources"))
+      Step.SingleStep(
+        name = "Compile sources",
+        run = Some(
+          Seq(Scala212, Scala213, Scala3).map(v => s""""++$v! compileSources"""").mkString("sbt --no-colors ", " ", "")
+        )
+      )
     )
   )
 )
@@ -41,6 +46,14 @@ addCommandAlias("fixCheck", "scalafixAll --check")
 addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
 addCommandAlias("prepare", "fix; fmt")
+
+// Scala 3 already picks the plugin up from the "plugin" dependency configuration; passing -Xplugin again fails with
+// "Setting -Xplugin set to ... redundantly".
+lazy val taggingPluginOptions = Def.task {
+  val converter = fileConverter.value
+  val jar       = converter.toPath((taggingPlugin / Compile / packageTask).value).toAbsolutePath
+  if (scalaBinaryVersion.value == "3") Seq.empty[String] else Seq(s"-Xplugin:$jar")
+}
 
 lazy val root = project
   .in(file("."))
@@ -85,7 +98,7 @@ lazy val taggingPluginTests = project
   .settings(
     stdSettings("zio-profiling-tagging-plugin-tests"),
     publish / skip := true,
-    Compile / scalacOptions += s"-Xplugin:${fileConverter.value.toPath((taggingPlugin / Compile / packageTask).value).toAbsolutePath}",
+    Compile / scalacOptions ++= taggingPluginOptions.value,
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-test"     % zioVersion % Test,
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test
@@ -99,7 +112,7 @@ lazy val examples = project
   .settings(
     stdSettings("examples"),
     publish / skip := true,
-    scalacOptions += s"-Xplugin:${fileConverter.value.toPath((taggingPlugin / Compile / packageTask).value).toAbsolutePath}"
+    scalacOptions ++= taggingPluginOptions.value
   )
 
 lazy val benchmarks = project
