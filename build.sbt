@@ -28,7 +28,7 @@ inThisBuild(
       Step.SingleStep(
         name = "Check website build process",
         run = Some(
-          Seq("docs/clean", "docs/installWebsite", "docs/buildWebsite").map("sbt --no-colors " + _).mkString("; ")
+          Seq("docs/clean", "docs/installWebsite", "docs/buildWebsite").map("sbt --no-colors --batch " + _).mkString("; ")
         )
       )
     ),
