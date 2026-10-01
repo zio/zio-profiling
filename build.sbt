@@ -22,6 +22,16 @@ inThisBuild(
       "core"               -> Seq(Scala212, Scala213, Scala3),
       "taggingPluginTests" -> Seq(Scala212, Scala213, Scala3)
     ),
+    // `docs/buildWebsite` on a fresh checkout fails with "Cannot find module './docs/sidebars.js'" unless the website
+    // is installed by a separate sbt invocation first.
+    ciCheckWebsiteBuildProcess := Seq(
+      Step.SingleStep(
+        name = "Check website build process",
+        run = Some(
+          Seq("docs/clean", "docs/installWebsite", "docs/buildWebsite").map("sbt --no-colors " + _).mkString("; ")
+        )
+      )
+    ),
     ciCheckArtifactsCompilationSteps := Seq(
       Step.SingleStep(
         name = "Compile sources",
