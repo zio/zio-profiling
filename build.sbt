@@ -22,17 +22,16 @@ inThisBuild(
       "core"               -> Seq(Scala212, Scala213, Scala3),
       "taggingPluginTests" -> Seq(Scala212, Scala213, Scala3)
     ),
-    // `docs/buildWebsite` on a fresh checkout fails with "Cannot find module './docs/sidebars.js'" unless the website
-    // is installed by a separate sbt invocation first.
+    // `docs/buildWebsite` fails on CI ("Failed to build the website!", with no npm output) when sbt launches
+    // `npm run build` itself, although the same command succeeds when run directly. So sbt only installs the website
+    // and compiles the docs, and the Docusaurus build runs as a plain shell step.
     ciCheckWebsiteBuildProcess := Seq(
       Step.SingleStep(
         name = "Check website build process",
         run = Some(
-          Seq("docs/clean", "docs/installWebsite", "docs/buildWebsite")
+          Seq("docs/clean", "docs/installWebsite", "docs/compileDocs")
             .map("sbt --no-colors --batch " + _)
-            .mkString(
-              "; "
-            ) + " || (cd website; npm run build; echo \"npm exit=$?\"; ls node_modules/.bin | head -5; exit 1)"
+            .mkString("", "; ", "; cd website; npm run build")
         )
       )
     ),
