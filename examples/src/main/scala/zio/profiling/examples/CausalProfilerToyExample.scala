@@ -1,11 +1,11 @@
 package zio.profiling.examples
 
+import zio._
 import zio.profiling.causal._
-import zio.{URIO, _}
 
 object CausalProfilerToyExample extends ZIOAppDefault {
 
-  def run: URIO[Any, ExitCode] =
+  def run: Task[Unit] =
     CausalProfiler(iterations = 100).profile {
       val io = for {
         _    <- CausalProfiler.progressPoint("iteration start")
@@ -16,5 +16,4 @@ object CausalProfilerToyExample extends ZIOAppDefault {
       io.forever
     }
       .flatMap[Any, Throwable, Unit](_.renderToFile("profile.coz"))
-      .exitCode
 }
