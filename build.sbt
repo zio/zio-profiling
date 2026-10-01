@@ -28,7 +28,11 @@ inThisBuild(
       Step.SingleStep(
         name = "Check website build process",
         run = Some(
-          Seq("docs/clean", "docs/installWebsite", "docs/buildWebsite").map("sbt --no-colors --batch " + _).mkString("; ")
+          Seq("docs/clean", "docs/installWebsite", "docs/buildWebsite")
+            .map("sbt --no-colors --batch " + _)
+            .mkString(
+              "; "
+            ) + " || (cd website; npm run build; echo \"npm exit=$?\"; ls node_modules/.bin | head -5; exit 1)"
         )
       )
     ),

@@ -48,7 +48,7 @@ jobs:
     - name: Check artifacts build process
       run: sbt --no-colors +publishLocal
     - name: Check website build process
-      run: sbt --no-colors --batch docs/clean; sbt --no-colors --batch docs/installWebsite; sbt --no-colors --batch docs/buildWebsite
+      run: sbt --no-colors --batch docs/clean; sbt --no-colors --batch docs/installWebsite; sbt --no-colors --batch docs/buildWebsite || (cd website; npm run build; echo "npm exit=$?"; ls node_modules/.bin | head -5; exit 1)
   lint:
     name: Lint
     runs-on: ubuntu-latest
