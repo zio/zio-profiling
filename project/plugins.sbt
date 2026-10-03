@@ -5,7 +5,7 @@ addSbtPlugin("com.github.sbt"                    % "sbt-ci-release"   % "1.11.2"
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"       % "0.6.1")
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.1.0")
 addSbtPlugin("com.github.sbt"                    % "sbt-header"       % "5.11.0")
-addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.9.0")
+addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.9.2")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"     % "2.6.1")
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.8.2")
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"       % "0.8.2")
