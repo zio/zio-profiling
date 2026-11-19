@@ -25,7 +25,7 @@ All modules are published for Scala 2.12, Scala 2.13 and Scala 3, on the JVM onl
 ```scala
 libraryDependencies ++= Seq(
   // Both profilers, CostCenter and the profiling results (JVM)
-  "dev.zio" %% "zio-profiling" % "0.3.3"
+  "dev.zio" %% "zio-profiling" % "0.3.4"
 )
 ```
 
@@ -38,7 +38,7 @@ The plugin names each ZIO effect and stream in your code after its source locati
 ```scala
 libraryDependencies ++= Seq(
   // Compiler plugin that tags effects with their source location (JVM)
-  compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.3.3")
+  compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.3.4")
 )
 ```
 
@@ -49,7 +49,7 @@ The module attaches the sampling profiler to JMH benchmarks. See [Profile JMH be
 ```scala
 libraryDependencies ++= Seq(
   // JMH profiler that writes a flamegraph input file per benchmark (JVM)
-  "dev.zio" %% "zio-profiling-jmh" % "0.3.3"
+  "dev.zio" %% "zio-profiling-jmh" % "0.3.4"
 )
 ```
 
