@@ -6,7 +6,7 @@ sidebar_label: "Profile a producer-consumer program"
 
 In this tutorial you will run the causal profiler on a program with producers and consumers that share a bounded queue, and read what it reports. A causal profile tells you how much faster the whole program would become if one part were faster. By the end you will know how to run an experiment, and how to read its lines.
 
-You need an sbt project with ZIO 2 and the `zio-profiling` dependency from [Getting Started](../getting-started.md). The same program is in the repository as `CausalProfilerProducerConsumerExample` in the `examples` module.
+You need an sbt project with ZIO 2 and the `zio-profiling` dependency from [Getting Started](../getting-started.md). A similar program is in the repository as `CausalProfilerProducerConsumerExample` in the `examples` module. It relies on the compiler plugin for names and uses the default warm-up.
 
 ## Step 1: Write the program
 

@@ -40,7 +40,7 @@ JMH prints `zio-profiler results:` followed by the path of the file. The file is
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `unsafeRun(zio)` | `[E, A](zio: ZIO[Any, E, A]): A` | Runs `zio` on the profiled runtime and returns its value. Fails with the effect's failure. |
+| `unsafeRun(zio)` | `[E, A](zio: ZIO[Any, E, A]): A` | Runs `zio` on the profiled runtime and returns its value. If `zio` fails, throws a `FiberFailure` that wraps the failure. |
 | `getRuntime()` | `Runtime[Any]` | The profiled runtime while a profile is running, otherwise `Runtime.default`. |
 | `getSupervisor()` | `Supervisor[Any]` | The sampling supervisor while a profile is running, otherwise `Supervisor.none`. |
 

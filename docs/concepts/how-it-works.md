@@ -23,11 +23,11 @@ Two consequences follow:
 
 ## The causal profiler
 
-The causal profiler runs a series of experiments. In each one it picks a cost center and a speedup between 0 and `maxConsideredSpeedUp` percent. It cannot make code faster, so it does the opposite: on every tick, it delays all code that is not in the selected cost center by a matching amount. Slowing everything else by 25% has the same effect on the ratio as speeding up the selected part by 25%.
+The causal profiler runs a series of experiments. In each one it picks a cost center and a speedup between 0 and `maxConsideredSpeedUp` percent. It cannot make code faster, so it does the opposite: on every tick, for each fiber running inside the selected cost center, the profiler adds a delay that all other fibers owe. Each of them pays it by sleeping at its next synchronous step. Slowing everything else by 25% has the same effect on the ratio as speeding up the selected part by 25%.
 
 Each experiment counts how often your [progress points](../reference/causal-profiler.md#progress-and-latency-points) were reached. Comparing the counts of experiments with different speedups for the same cost center shows whether a faster cost center would raise throughput. A rise means the part limits the program. A flat line means it does not.
 
-The profiler applies delays only at points where a fiber runs a synchronous step, so a fiber that blocks for a long time without returning to the runtime is delayed only after it finishes that step.
+A fiber pays its delay in two places: just before it runs a synchronous step, and when it ends without being interrupted. A fiber that blocks for a long time inside one step is therefore delayed only at its next synchronous step or when it ends. A fiber that was suspended on an asynchronous result is credited for the delay that built up meanwhile when it resumes, and is not delayed for it again.
 
 ## Limits
 

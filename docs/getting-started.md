@@ -14,7 +14,7 @@ The plugin is what gives the profile useful names. Without it, every sample land
 
 ## Profile your first program
 
-The program below runs two effects at the same time. `SamplingProfiler().profile` runs it and returns a `ProfilingResult`: the number of samples taken in each cost center.
+The program below runs two effects at the same time. `SamplingProfiler().profile` runs it and returns a `ProfilingResult`: the number of samples taken in each cost center. A cost center is a name for a part of your program, such as `fast` or `slow` below.
 
 ```scala mdoc:silent
 import zio._

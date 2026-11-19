@@ -105,7 +105,7 @@ final case class ExperimentResult(
 | `speedup` | Fraction of speedup applied, from `0` to `1`. `0.25` means the selected part was made 25% faster, by slowing everything else. |
 | `duration` | Planned length of the experiment, in nanoseconds. |
 | `effectiveDuration` | `duration` minus the total delay that was added to the other code during the experiment, in nanoseconds. This is the time the selected code effectively had to itself. |
-| `selectedSamples` | Number of delay steps counted during the experiment: one for each running fiber in the selected cost center at each sampling tick. Despite its name, this counts delay steps, not sampled time. |
+| `selectedSamples` | Number of delay steps counted during the experiment: one for each running fiber in the selected cost center, or in a cost center nested under it, at each sampling tick. Despite its name, this counts delay steps, not sampled time. |
 | `throughputData` | How often each progress point was reached during the experiment. |
 | `latencyData` | Arrivals and departures for each latency point. |
 
