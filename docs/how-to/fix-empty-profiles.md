@@ -1,7 +1,7 @@
 ---
 id: fix-empty-profiles
-title: "Fix empty or unnamed profiles"
-sidebar_label: "Fix empty or unnamed profiles"
+title: "Fix Empty or Unnamed Profiles"
+sidebar_label: "Fix Empty or Unnamed Profiles"
 ---
 
 This guide lists the usual reasons a profile has no useful content, and the fix for each.

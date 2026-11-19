@@ -1,7 +1,7 @@
 ---
 id: which-profiler
-title: "Which profiler do I need?"
-sidebar_label: "Which profiler do I need?"
+title: "Which Profiler Do I Need?"
+sidebar_label: "Which Profiler Do I Need?"
 ---
 
 ZIO Profiling ships two profilers in the `zio-profiling` module, plus a JMH integration. They answer different questions.

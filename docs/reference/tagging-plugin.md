@@ -1,7 +1,7 @@
 ---
 id: tagging-plugin
-title: "Tagging compiler plugin reference"
-sidebar_label: "Tagging plugin"
+title: "Tagging Compiler Plugin Reference"
+sidebar_label: "Tagging Plugin"
 ---
 
 The tagging plugin is a compiler plugin that wraps ZIO effects and streams in a [`CostCenter`](cost-center.md) at compile time. It has no options and no runtime API. This page describes what it rewrites. For the steps to enable it, see [Set up the tagging compiler plugin](../how-to/setup-tagging-plugin.md).

@@ -1,7 +1,7 @@
 ---
 id: profile-part-of-program
-title: "Profile part of a program with a supervisor"
-sidebar_label: "Profile part of a program"
+title: "Profile Part of a Program with a Supervisor"
+sidebar_label: "Profile Part of a Program"
 ---
 
 `SamplingProfiler().profile` and `CausalProfiler.profile` wrap the whole effect you pass in. When you want to profile only one part, for example one request handler in a larger application, attach the profiler as a supervisor to just that part. This guide shows how, for both profilers.

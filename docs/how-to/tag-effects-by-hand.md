@@ -1,7 +1,7 @@
 ---
 id: tag-effects-by-hand
-title: "Tag effects by hand"
-sidebar_label: "Tag effects by hand"
+title: "Tag Effects by Hand"
+sidebar_label: "Tag Effects by Hand"
 ---
 
 The compiler plugin names effects for you. Sometimes you want a name it does not give: a block inside a large `def`, a part of a stream, or a project that cannot use the plugin. Then you can wrap the effect yourself with `CostCenter`. This guide shows how.

@@ -1,6 +1,6 @@
 ---
 id: cost-center
-title: "CostCenter reference"
+title: "CostCenter Reference"
 sidebar_label: "CostCenter"
 ---
 

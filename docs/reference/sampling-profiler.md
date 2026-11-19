@@ -1,7 +1,7 @@
 ---
 id: sampling-profiler
-title: "Sampling profiler reference"
-sidebar_label: "Sampling profiler"
+title: "Sampling Profiler Reference"
+sidebar_label: "Sampling Profiler"
 ---
 
 The sampling profiler lives in package `zio.profiling.sampling`. It records, at a fixed interval, which cost center each running fiber is in. The result shows how much time each cost center accounts for. For a step-by-step walk-through, see the [tutorial](../tutorials/first-flamegraph.md).

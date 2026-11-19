@@ -1,7 +1,7 @@
 ---
 id: find-producer-consumer-bottleneck
-title: "Profile a producer-consumer program with the causal profiler"
-sidebar_label: "Profile a producer-consumer program"
+title: "Profile a Producer-Consumer Program with the Causal Profiler"
+sidebar_label: "Profile a Producer-Consumer Program"
 ---
 
 In this tutorial you will run the causal profiler on a program with producers and consumers that share a bounded queue, and read what it reports. A causal profile tells you how much faster the whole program would become if one part were faster. By the end you will know how to run an experiment, and how to read its lines.

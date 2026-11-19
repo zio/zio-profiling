@@ -1,7 +1,7 @@
 ---
 id: causal-profiler
-title: "Causal profiler reference"
-sidebar_label: "Causal profiler"
+title: "Causal Profiler Reference"
+sidebar_label: "Causal Profiler"
 ---
 
 The causal profiler lives in package `zio.profiling.causal`. It is experimental. It is inspired by [Coz](https://github.com/plasma-umass/coz): it selects a cost center, makes the rest of the program run relatively slower for a while, and counts how many progress points are reached. From that it estimates how much the program would speed up if the selected part were faster. For a how-to guide, see [Find a bottleneck with the causal profiler](../how-to/find-bottleneck-causal.md).

@@ -1,7 +1,7 @@
 ---
 id: setup-tagging-plugin
-title: "Set up the tagging compiler plugin"
-sidebar_label: "Set up the tagging compiler plugin"
+title: "Set Up the Tagging Compiler Plugin"
+sidebar_label: "Set Up the Tagging Compiler Plugin"
 ---
 
 The tagging compiler plugin gives each ZIO effect a name made from its place in your source code. Both profilers use those names. This guide shows how to turn the plugin on for a module, and what it changes in your code.

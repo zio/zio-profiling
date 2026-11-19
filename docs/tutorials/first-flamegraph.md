@@ -1,7 +1,7 @@
 ---
 id: first-flamegraph
-title: "Profile a program and read the flamegraph"
-sidebar_label: "Profile your first program"
+title: "Profile a Program and Read the Flamegraph"
+sidebar_label: "Profile Your First Program"
 ---
 
 In this tutorial you will profile a small ZIO program with the sampling profiler, write the result to a file, and turn that file into a flamegraph. A flamegraph shows which parts of your program used the most time. By the end you will know how to read one.

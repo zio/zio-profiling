@@ -1,7 +1,7 @@
 ---
 id: find-bottleneck-causal
-title: "Find a bottleneck with the causal profiler"
-sidebar_label: "Find a bottleneck with the causal profiler"
+title: "Find a Bottleneck with the Causal Profiler"
+sidebar_label: "Find a Bottleneck with the Causal Profiler"
 ---
 
 Use the causal profiler when you want to know which part of your program is worth optimizing. A sampling profile shows where time is spent. A causal profile estimates how much the whole program would speed up if one part became faster. A part that takes a lot of time is not always the part that limits throughput.

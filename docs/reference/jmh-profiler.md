@@ -1,7 +1,7 @@
 ---
 id: jmh-profiler
-title: "JMH profiler reference"
-sidebar_label: "JMH profiler"
+title: "JMH Profiler Reference"
+sidebar_label: "JMH Profiler"
 ---
 
 The `zio-profiling-jmh` module attaches the [sampling profiler](sampling-profiler.md) to a JMH run. It lives in package `zio.profiling.jmh`. For the steps to run a benchmark with it, see [Profile JMH benchmarks](../how-to/profile-jmh-benchmarks.md).

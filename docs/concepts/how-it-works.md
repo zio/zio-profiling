@@ -1,7 +1,7 @@
 ---
 id: how-it-works
-title: "How ZIO Profiling works"
-sidebar_label: "How ZIO Profiling works"
+title: "How ZIO Profiling Works"
+sidebar_label: "How ZIO Profiling Works"
 ---
 
 A thread profiler sees only the ZIO runtime's evaluation loop. ZIO Profiling instead asks each fiber where in your program it is, and reports per named location. This page explains the pieces and their limits.
