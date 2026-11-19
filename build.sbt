@@ -145,8 +145,12 @@ lazy val docs = project
     moduleName := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName                                := "ZIO Profiling",
-    mainModuleName                             := (core / moduleName).value,
-    projectStage                               := ProjectStage.Concept,
+    projectName    := "ZIO Profiling",
+    mainModuleName := (core / moduleName).value,
+    projectStage   := ProjectStage.Concept,
+    // On a fresh checkout these tasks read website/docs before mdoc has written it ("FileNotFoundException:
+    // website/docs/index.md"), so run mdoc first.
+    generateReadme                             := generateReadme.dependsOn(mdoc.toTask("")).value,
+    publishToNpm                               := publishToNpm.dependsOn(mdoc.toTask("")).value,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core)
   )
