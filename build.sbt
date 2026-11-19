@@ -23,15 +23,15 @@ inThisBuild(
       "taggingPluginTests" -> Seq(Scala212, Scala213, Scala3)
     ),
     // `docs/buildWebsite` fails on CI ("Failed to build the website!", with no npm output) when sbt launches
-    // `npm run build` itself, although the same command succeeds when run directly. So sbt only installs the website
-    // and compiles the docs, and the Docusaurus build runs as a plain shell step.
+    // `npm run build` itself, although the same command succeeds when run directly. So sbt only compiles the docs, and
+    // `npm install` and the Docusaurus build run as plain shell steps (the website scaffold is committed).
     ciCheckWebsiteBuildProcess := Seq(
       Step.SingleStep(
         name = "Check website build process",
         run = Some(
-          Seq("docs/clean", "docs/installWebsite", "docs/compileDocs")
+          Seq("docs/clean", "docs/compileDocs")
             .map("sbt --no-colors --batch " + _)
-            .mkString("", "; ", "; cd website; npm run build")
+            .mkString("", "; ", "; cd website; npm install; npm run build")
         )
       )
     ),

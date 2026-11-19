@@ -1,47 +1,45 @@
 const sidebars = {
   sidebar: [
-    {
-      type: "category",
-      label: "Getting Started",
-      collapsed: false,
-      link: { type: "doc", id: "index" },
-      items: [
-        "resources"
-      ]
-    },
+    "index",
+    "getting-started",
+    "concepts/which-profiler",
+    "concepts/how-it-works",
     {
       type: "category",
       label: "Reference",
       collapsed: false,
-      link: { type: "doc", id: "reference/sampling-profiler" },
       items: [
         "reference/sampling-profiler",
         "reference/causal-profiler",
-        "reference/cost-center"
+        "reference/cost-center",
+        "reference/tagging-plugin",
+        "reference/jmh-profiler"
       ]
     },
     {
       type: "category",
-      label: "Tutorial",
-      collapsed: false,
-      link: { type: "doc", id: "tutorials/first-flamegraph" },
+      label: "Tutorials",
+      collapsed: true,
       items: [
-        "tutorials/first-flamegraph"
+        "tutorials/first-flamegraph",
+        "tutorials/find-producer-consumer-bottleneck"
       ]
     },
     {
       type: "category",
       label: "How-to Guides",
-      collapsed: false,
-      link: { type: "doc", id: "how-to/find-bottleneck-causal" },
+      collapsed: true,
       items: [
         "how-to/find-bottleneck-causal",
         "how-to/setup-tagging-plugin",
         "how-to/tag-effects-by-hand",
         "how-to/profile-running-application",
-        "how-to/profile-jmh-benchmarks"
+        "how-to/profile-jmh-benchmarks",
+        "how-to/profile-part-of-program",
+        "how-to/fix-empty-profiles"
       ]
-    }
+    },
+    "resources"
   ]
 };
 

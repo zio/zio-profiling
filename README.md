@@ -16,34 +16,46 @@ Instead, profiling a program written using an effect system requires a profiler 
 
 The library focuses exclusively on cpu profiling. For heap profiling please consider using other tools such as async-profiler or VisualVM.
 
+ZIO Profiling ships a [sampling profiler](docs/reference/sampling-profiler.md) that shows where your program spends its time, and a [causal profiler](docs/reference/causal-profiler.md) that shows which part is worth optimizing. To choose between them, see [Which profiler do I need?](docs/concepts/which-profiler.md).
+
 ## Installation
 
-ZIO Profiling requires you to add the main library to your `build.sbt`. The compiler plugin is optional, but it is what gives the profiles useful source locations (see [Set up the tagging compiler plugin](docs/how-to/setup-tagging-plugin.md)):
+All modules are published for Scala 2.12, Scala 2.13 and Scala 3, on the JVM only, and depend on ZIO 2.
 
-```sbt
-libraryDependencies += "dev.zio" %% "zio-profiling" % "0.3.3"
-libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.3.3")
+```scala
+libraryDependencies ++= Seq(
+  // Both profilers, CostCenter and the profiling results (JVM)
+  "dev.zio" %% "zio-profiling" % "0.3.3"
+)
 ```
 
-The library is published for Scala 2.12, Scala 2.13 and Scala 3, and depends on ZIO 2.
+## Modules
 
-## Which profiler do I need?
+### Tagging compiler plugin
 
-ZIO Profiling ships two profilers in the `zio-profiling` module, plus a JMH integration:
+The plugin names each ZIO effect and stream in your code after its source location. Both profilers report per name, so you almost always want it. See [Set up the tagging compiler plugin](docs/how-to/setup-tagging-plugin.md) and the [plugin reference](docs/reference/tagging-plugin.md).
 
-| I want to...                                                  | Use                                                                                 |
-|---------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| See where my program spends its CPU time                       | The [sampling profiler](docs/reference/sampling-profiler.md), rendered as a flamegraph   |
-| Find which part of my program to speed up for the biggest gain | The [causal profiler](docs/reference/causal-profiler.md), rendered for the Coz visualizer |
-| Profile a JMH benchmark                                       | [Profile JMH benchmarks](docs/how-to/profile-jmh-benchmarks.md)                          |
+```scala
+libraryDependencies ++= Seq(
+  // Compiler plugin that tags effects with their source location (JVM)
+  compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "0.3.3")
+)
+```
 
-New to the library? Start with the [tutorial](docs/tutorials/first-flamegraph.md), which profiles a small program and reads the flamegraph.
+### JMH integration
+
+The module attaches the sampling profiler to JMH benchmarks. See [Profile JMH benchmarks](docs/how-to/profile-jmh-benchmarks.md) and the [JMH profiler reference](docs/reference/jmh-profiler.md).
+
+```scala
+libraryDependencies ++= Seq(
+  // JMH profiler that writes a flamegraph input file per benchmark (JVM)
+  "dev.zio" %% "zio-profiling-jmh" % "0.3.3"
+)
+```
 
 ## Where to go next
 
-- **Tutorial:** [Profile a program and read the flamegraph](docs/tutorials/first-flamegraph.md)
-- **How-to guides:** [Find a bottleneck with the causal profiler](docs/how-to/find-bottleneck-causal.md), [Set up the tagging compiler plugin](docs/how-to/setup-tagging-plugin.md), [Tag effects by hand](docs/how-to/tag-effects-by-hand.md), [Profile a running application](docs/how-to/profile-running-application.md), [Profile JMH benchmarks](docs/how-to/profile-jmh-benchmarks.md)
-- **Reference:** [Sampling profiler](docs/reference/sampling-profiler.md), [Causal profiler](docs/reference/causal-profiler.md), [CostCenter](docs/reference/cost-center.md)
+New to the library? Follow [Getting Started](docs/getting-started.md), then the [tutorial](docs/tutorials/first-flamegraph.md).
 
 ## Documentation
 

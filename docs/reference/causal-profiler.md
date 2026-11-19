@@ -1,7 +1,7 @@
 ---
 id: causal-profiler
-title: "Causal profiler reference"
-sidebar_label: "Causal profiler"
+title: "Causal Profiler Reference"
+sidebar_label: "Causal Profiler"
 ---
 
 The causal profiler lives in package `zio.profiling.causal`. It is experimental. It is inspired by [Coz](https://github.com/plasma-umass/coz): it selects a cost center, makes the rest of the program run relatively slower for a while, and counts how many progress points are reached. From that it estimates how much the program would speed up if the selected part were faster. For a how-to guide, see [Find a bottleneck with the causal profiler](../how-to/find-bottleneck-causal.md).
@@ -41,7 +41,7 @@ final case class CausalProfiler(
 | `maxConsideredSpeedUp` | `100` | Largest speedup, as a percentage, that an experiment can apply. Values above 100 have no practical use. |
 | `sleepPrecision` | `10.millis` | Estimated accuracy of `Thread.sleep`. Within this distance of the target time, the profiler busy-waits for accuracy. |
 
-With the defaults, a profile takes at least `warmUpPeriod + iterations * (minExperimentDuration + coolOffPeriod)`, which is about 5.5 minutes. For tests and first runs, lower `warmUpPeriod`, `coolOffPeriod` and `iterations`.
+With the defaults, a profile takes at least `warmUpPeriod + iterations * minExperimentDuration + (iterations - 1) * coolOffPeriod`, which is a little over 5 minutes (328 seconds). There is no cool-off after the last experiment. For tests and first runs, lower `warmUpPeriod`, `coolOffPeriod` and `iterations`.
 
 ```scala mdoc
 CausalProfiler(iterations = 10, warmUpPeriod = 0.seconds).iterations
@@ -105,7 +105,7 @@ final case class ExperimentResult(
 | `speedup` | Fraction of speedup applied, from `0` to `1`. `0.25` means the selected part was made 25% faster, by slowing everything else. |
 | `duration` | Planned length of the experiment, in nanoseconds. |
 | `effectiveDuration` | `duration` minus the total delay that was added to the other code during the experiment, in nanoseconds. This is the time the selected code effectively had to itself. |
-| `selectedSamples` | Number of delay steps counted during the experiment: one for each running fiber in the selected cost center at each sampling tick. Despite its name, this counts delay steps, not sampled time. |
+| `selectedSamples` | Number of delay steps counted during the experiment: one for each running fiber in the selected cost center, or in a cost center nested under it, at each sampling tick. Despite its name, this counts delay steps, not sampled time. |
 | `throughputData` | How often each progress point was reached during the experiment. |
 | `latencyData` | Arrivals and departures for each latency point. |
 
@@ -116,6 +116,27 @@ experiment	selected=<cost center>	speedup=<speedup>	duration=<effective duration
 ```
 
 Each following line is a `throughput-point` line (`name`, `delta`) or a `latency-point` line (`name`, `arrivals`, `departures`, `difference`), one for each progress point and latency point. The fields are separated by tabs.
+
+### ThroughputData and LatencyData
+
+```text
+final case class ThroughputData(name: String, delta: Int)
+final case class LatencyData(name: String, arrivals: Int, departures: Int)
+```
+
+| Field | Meaning |
+|-------|---------|
+| `ThroughputData.name` | The name passed to `progressPoint`. |
+| `ThroughputData.delta` | How many times that progress point was reached during the experiment. |
+| `LatencyData.name` | The name passed to `enterLatencyPoint`, `exitLatencyPoint` or `latencyPointScoped`. |
+| `LatencyData.arrivals` | How many times `enterLatencyPoint` ran during the experiment. |
+| `LatencyData.departures` | How many times `exitLatencyPoint` ran during the experiment. |
+
+Each has a `render` method that produces its line in the output below.
+
+## Logging
+
+The profiler logs at the `Info` level when it starts warming up, when each experiment starts and when profiling is done. An experiment line contains the experiment number, the selected cost center, the speedup and the planned duration in nanoseconds. Use these lines to follow the progress of a long run.
 
 ## Output
 

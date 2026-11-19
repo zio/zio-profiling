@@ -1,6 +1,6 @@
 ---
 id: cost-center
-title: "CostCenter reference"
+title: "CostCenter Reference"
 sidebar_label: "CostCenter"
 ---
 
@@ -62,6 +62,10 @@ The how-to guide [Tag effects by hand](../how-to/tag-effects-by-hand.md) shows t
 ```scala mdoc:compile-only
 val parse: UIO[Int] = CostCenter.withChildCostCenter("parse")(ZIO.succeed(21))
 ```
+
+## Fibers
+
+The active cost center is stored in a `FiberRef`. A fiber that is forked starts in the cost center of its parent. When the fiber is joined, the parent keeps its own cost center, so tags set inside a child fiber never leak back out.
 
 ## Naming
 

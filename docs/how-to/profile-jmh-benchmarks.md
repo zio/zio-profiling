@@ -1,7 +1,7 @@
 ---
 id: profile-jmh-benchmarks
-title: "Profile JMH benchmarks"
-sidebar_label: "Profile JMH benchmarks"
+title: "Profile JMH Benchmarks"
+sidebar_label: "Profile JMH Benchmarks"
 ---
 
 The [Java Microbenchmark Harness (JMH)](https://github.com/openjdk/jmh) measures how fast a piece of code runs. ZIO Profiling can attach a sampling profiler to a JMH run, so each benchmark also produces a profile of the ZIO effects it runs. This guide shows how to set up a benchmark, run it with the profiler, and find the profile file.

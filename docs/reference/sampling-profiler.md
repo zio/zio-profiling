@@ -1,10 +1,10 @@
 ---
 id: sampling-profiler
-title: "Sampling profiler reference"
-sidebar_label: "Sampling profiler"
+title: "Sampling Profiler Reference"
+sidebar_label: "Sampling Profiler"
 ---
 
-The sampling profiler lives in package `zio.profiling.sampling`. It records, at a fixed interval, which cost center each running fiber is in. The result shows how much time each cost center accounts for. For a how-to guide, see the [tutorial](../tutorials/first-flamegraph.md).
+The sampling profiler lives in package `zio.profiling.sampling`. It records, at a fixed interval, which cost center each running fiber is in. The result shows how much time each cost center accounts for. For a step-by-step walk-through, see the [tutorial](../tutorials/first-flamegraph.md).
 
 ```scala mdoc:silent
 import zio.profiling.sampling._
@@ -31,7 +31,7 @@ SamplingProfiler()
 | Method | Type | Description |
 |--------|------|-------------|
 | `profile` | `[R, E](zio: ZIO[R, E, Any]): ZIO[R, E, ProfilingResult]` | Runs `zio` with a sampler attached, then returns the samples. The sampler stops when `zio` finishes. The value of `zio` is discarded; the result is the profile. If `zio` fails, so does the profile. |
-| `makeSupervisor` | `URIO[Scope, SamplingProfilerSupervisor]` | Starts a sampler in the current scope and returns the supervisor that holds its samples. Sampling continues until the scope closes. |
+| `makeSupervisor` | `URIO[Scope, SamplingProfilerSupervisor]` | Starts a sampler in the current scope and returns the supervisor that holds its samples. Sampling continues until the scope closes. Only effects run with `.supervised(supervisor)` are sampled. |
 | `supervisedRuntime` | `(implicit unsafe: Unsafe): Runtime.Scoped[SamplingProfilerSupervisor]` | Creates a runtime with a sampler attached, so every effect run with it is sampled. Get the supervisor with `runtime.environment.get[SamplingProfilerSupervisor]`. Shut the runtime down when you are done. |
 
 The how-to guide [Profile a running application](../how-to/profile-running-application.md) shows `supervisedRuntime` in use.

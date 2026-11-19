@@ -1,14 +1,14 @@
 ---
 id: first-flamegraph
-title: "Profile a program and read the flamegraph"
-sidebar_label: "Profile your first program"
+title: "Profile a Program and Read the Flamegraph"
+sidebar_label: "Profile Your First Program"
 ---
 
 In this tutorial you will profile a small ZIO program with the sampling profiler, write the result to a file, and turn that file into a flamegraph. A flamegraph shows which parts of your program used the most time. By the end you will know how to read one.
 
 You need:
 
-- an sbt project that uses Scala 2.13 or Scala 3 and ZIO 2
+- an sbt project that uses Scala 2.12, Scala 2.13 or Scala 3 and ZIO 2
 - the [FlameGraph](https://github.com/brendangregg/FlameGraph) scripts, in particular `flamegraph.pl`, on your `PATH`
 
 ## Step 1: Add ZIO Profiling to your build

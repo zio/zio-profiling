@@ -1,7 +1,7 @@
 ---
 id: profile-running-application
-title: "Profile a running application"
-sidebar_label: "Profile a running application"
+title: "Profile a Running Application"
+sidebar_label: "Profile a Running Application"
 ---
 
 `SamplingProfiler().profile` profiles one effect and stops when that effect finishes. Sometimes you want a profiler that keeps collecting samples for as long as the application runs, for example in a long-running service or in a benchmark harness. This guide shows how to build a runtime that is profiled from the start, read its samples at any time, and shut it down.
