@@ -8,7 +8,7 @@ In this tutorial you will profile a small ZIO program with the sampling profiler
 
 You need:
 
-- an sbt project that uses Scala 2.13 or Scala 3 and ZIO 2
+- an sbt project that uses Scala 2.12, Scala 2.13 or Scala 3 and ZIO 2
 - the [FlameGraph](https://github.com/brendangregg/FlameGraph) scripts, in particular `flamegraph.pl`, on your `PATH`
 
 ## Step 1: Add ZIO Profiling to your build
