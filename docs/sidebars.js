@@ -1,39 +1,24 @@
 const sidebars = {
   sidebar: [
-    {
-      type: "category",
-      label: "Getting Started",
-      collapsed: false,
-      link: { type: "doc", id: "index" },
-      items: [
-        "resources"
-      ]
-    },
+    "index",
+    "getting-started",
+    "concepts/which-profiler",
+    "concepts/how-it-works",
     {
       type: "category",
       label: "Reference",
       collapsed: false,
-      link: { type: "doc", id: "reference/sampling-profiler" },
       items: [
         "reference/sampling-profiler",
         "reference/causal-profiler",
         "reference/cost-center"
       ]
     },
-    {
-      type: "category",
-      label: "Tutorial",
-      collapsed: false,
-      link: { type: "doc", id: "tutorials/first-flamegraph" },
-      items: [
-        "tutorials/first-flamegraph"
-      ]
-    },
+    "tutorials/first-flamegraph",
     {
       type: "category",
       label: "How-to Guides",
-      collapsed: false,
-      link: { type: "doc", id: "how-to/find-bottleneck-causal" },
+      collapsed: true,
       items: [
         "how-to/find-bottleneck-causal",
         "how-to/setup-tagging-plugin",
@@ -41,7 +26,8 @@ const sidebars = {
         "how-to/profile-running-application",
         "how-to/profile-jmh-benchmarks"
       ]
-    }
+    },
+    "resources"
   ]
 };
 
