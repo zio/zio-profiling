@@ -9,9 +9,8 @@ The `zio-profiling-jmh` module attaches the [sampling profiler](sampling-profile
 ## Artifact
 
 ```scala
-libraryDependencies ++= Seq(
-  "dev.zio" %% "zio-profiling-jmh" % "@VERSION@"
-)
+// JMH profiler that writes a flamegraph input file per benchmark (JVM)
+libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "@VERSION@"
 ```
 
 ## JmhZioProfiler
