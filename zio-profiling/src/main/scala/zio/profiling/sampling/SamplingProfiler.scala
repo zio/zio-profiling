@@ -48,9 +48,10 @@ final case class SamplingProfiler(
    * Starts a sampler in the current scope and returns the supervisor that holds its samples. Sampling stops when the
    * scope closes.
    *
-   * Only fibers that start, or resume after a suspension, inside `.supervised(supervisor)` are sampled: fork the
-   * profiled effect inside `.supervised`. A known bug: every run of `makeSupervisor` on the same `SamplingProfiler`
-   * value returns the same supervisor, so samples from earlier runs stay in it.
+   * Only fibers that start, or resume after a suspension, inside `.supervised(supervisor)` are sampled. A fiber that
+   * resumes there without forking stays sampled after it leaves `.supervised`, so fork the profiled effect inside it. A
+   * known bug: every run of `makeSupervisor` on the same `SamplingProfiler` value returns the same supervisor, so
+   * samples from earlier runs stay in it.
    */
   val makeSupervisor: URIO[Scope, SamplingProfilerSupervisor] = {
     val supervisor = new SamplingProfilerSupervisor()
