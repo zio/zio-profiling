@@ -16,7 +16,8 @@ import scala.annotation.unused
 
 /**
  * A JMH profiler that samples the ZIO effects of a benchmark with a sampling profiler and writes the result to a file,
- * one file per benchmark run. Pass its fully qualified name to JMH's `-prof` option. With the sbt-jmh plugin:
+ * one file per benchmark and parameter set. Pass its fully qualified name to JMH's `-prof` option. With the sbt-jmh
+ * plugin:
  *
  * {{{
  * // no-check: sbt build setting, not Scala code
@@ -56,7 +57,8 @@ import scala.annotation.unused
  * its runtime down. The file is in a directory named after the JMH benchmark id (benchmark, mode and parameters, for
  * example `bench.SumBenchmarks.sumWithZio-Throughput` or `bench.SumBenchmarks.sumWithZio-Throughput-size-100`), inside
  * the working directory of the JVM that runs the benchmark. A run with no warm-up iterations (`-wi 0`) creates the
- * directory but writes no file.
+ * directory but writes no file. With more than one fork (for example `-f 2`), each fork writes the same file, so it
+ * holds the samples of the last fork only.
  *
  * The samples are grouped by cost center. Effects that are not tagged, by hand with
  * `zio.profiling.CostCenter.withChildCostCenter` or by the `zio-profiling-tagging-plugin` compiler plugin, share one

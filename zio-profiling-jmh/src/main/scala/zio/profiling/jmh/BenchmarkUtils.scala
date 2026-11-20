@@ -15,8 +15,8 @@ object BenchmarkUtils {
 
   /**
    * Returns the sampling runtime of the running [[JmhZioProfiler]], or `Runtime.default` when no profiler is running:
-   * without `-prof zio.profiling.jmh.JmhZioProfiler`, before the first warm-up iteration, and after the last
-   * measurement iteration.
+   * without `-prof zio.profiling.jmh.JmhZioProfiler`, in a run with no warm-up iterations (`-wi 0`), before the first
+   * warm-up iteration, and after the last measurement iteration.
    */
   def getRuntime(): Runtime[Any] = {
     val customRt = runtimeRef.get()
