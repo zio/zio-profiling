@@ -52,14 +52,16 @@ import java.util.concurrent.ConcurrentHashMap
  *   decides which cost centers can be selected for an experiment. It receives the last location name of a cost center:
  *   for `Root / "outer" / "slow"` it receives `"slow"`.
  * @param samplingPeriod
- *   how often the profiler checks which cost center each fiber is in, and the step at which it adds delays.
+ *   how often the profiler runs a step. A step ends the warm-up, an experiment or a cool-off when its time is up, looks
+ *   for a candidate when an experiment is pending, and during an experiment adds `speedup` times `samplingPeriod` to
+ *   the delay of the other fibers for each running fiber in the selected cost center.
  * @param minExperimentDuration
  *   the planned length of the first experiment, and the shortest planned length of the later ones.
  * @param experimentTargetSamples
  *   the number of times each progress point should run during an experiment. The profiler doubles or halves the length
  *   of the next experiment to get closer to it.
  * @param warmUpPeriod
- *   the time between the start of the profile and the first experiment. The program runs during this time.
+ *   the time to wait after the profile starts before the first experiment can start. The program runs during this time.
  * @param coolOffPeriod
  *   the time to wait between two experiments.
  * @param zeroSpeedupWeight
@@ -68,7 +70,8 @@ import java.util.concurrent.ConcurrentHashMap
  *   does not complete.
  * @param maxConsideredSpeedUp
  *   the largest speedup, as a percentage, that an experiment can select; speedups are drawn at random from 1 to this
- *   value. Values over 100 do not have any practical use. It must be positive; with `0`, the profile does not complete.
+ *   value. Values over 100 do not have any practical use. It must be positive; with `0`, the profile does not complete
+ *   once an experiment draws a speedup other than `0`.
  * @param sleepPrecision
  *   the estimated precision of `Thread.sleep`. When a delay is this close to its end, the profiler busy-waits instead
  *   of sleeping, to make the delay more accurate.
@@ -99,11 +102,12 @@ final case class CausalProfiler(
    * Runs `zio` with the profiler attached until the profile is complete, then interrupts `zio` and returns the result.
    * `zio` must not end on its own, so wrap it in `forever`, and call
    * [[zio.profiling.causal.CausalProfiler.progressPoint]] in it to signal progress. Without progress points, the
-   * experiments have no throughput data.
+   * experiments have no throughput data, and each experiment is planned twice as long as the one before.
    *
    * The first experiment starts only when a fiber runs in a cost center that `candidateSelector` accepts; until then
-   * the profile does not complete. A known bug: when `zio` fails or dies, the profile does not fail with that error,
-   * and it does not complete either.
+   * the profile does not complete. A known bug: when `zio` fails or dies, the profile does not fail with that error. If
+   * this happens before the last experiment, the profile does not complete; if it happens during the last experiment,
+   * the profile succeeds with the result.
    */
   def profile[R, E](zio: ZIO[R, E, Nothing])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
     ZIO.scoped[R] {
