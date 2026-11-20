@@ -3,7 +3,7 @@ import Keys.{`package` => packageTask}
 import BuildHelper._
 import Dependencies._
 
-import zio.sbt.githubactions.Step
+import zio.sbt.githubactions.{Job, Step}
 
 inThisBuild(
   List(
@@ -25,6 +25,8 @@ inThisBuild(
     // `docs/buildWebsite` fails on CI ("Failed to build the website!", with no npm output) when sbt launches
     // `npm run build` itself, although the same command succeeds when run directly. So sbt only compiles the docs, and
     // `npm install` and the Docusaurus build run as plain shell steps (the website scaffold is committed).
+    ciUpdateReadmeJobs         := ciUpdateReadmeJobs.value.map(compileDocsBefore("Generate Readme")),
+    ciPostReleaseJobs          := ciPostReleaseJobs.value.map(compileDocsBefore("Publish Docs to NPM Registry")),
     ciCheckWebsiteBuildProcess := Seq(
       Step.SingleStep(
         name = "Check website build process",
@@ -45,6 +47,21 @@ inThisBuild(
     )
   )
 )
+
+// `sbt docs/generateReadme` and `sbt docs/publishToNpm` fail on a fresh checkout with "FileNotFoundException:
+// website/docs/index.md" (or package.json), although mdoc reports 0 errors in the same run. They work when mdoc ran
+// as its own sbt command before, so CI compiles the docs in a separate step first.
+def compileDocsBefore(stepName: String)(job: Job): Job = {
+  val compileDocs = Step.SingleStep(name = "Compile docs", run = Some("sbt --no-colors docs/mdoc"))
+
+  def insert(step: Step): Seq[Step] = step match {
+    case single: Step.SingleStep if single.name == stepName => Seq(compileDocs, single)
+    case sequence: Step.StepSequence                        => Seq(Step.StepSequence(sequence.steps.flatMap(insert)))
+    case other                                              => Seq(other)
+  }
+
+  job.withSteps(job.steps.flatMap(insert): _*)
+}
 
 addCommandAlias(
   "compileSources",
@@ -145,12 +162,8 @@ lazy val docs = project
     moduleName := "zio-profiling-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName    := "ZIO Profiling",
-    mainModuleName := (core / moduleName).value,
-    projectStage   := ProjectStage.Concept,
-    // On a fresh checkout these tasks read website/docs before mdoc has written it ("FileNotFoundException:
-    // website/docs/index.md"), so run mdoc first.
-    generateReadme                             := generateReadme.dependsOn(mdoc.toTask("")).value,
-    publishToNpm                               := publishToNpm.dependsOn(mdoc.toTask("")).value,
+    projectName                                := "ZIO Profiling",
+    mainModuleName                             := (core / moduleName).value,
+    projectStage                               := ProjectStage.Concept,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core)
   )
