@@ -71,7 +71,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @param maxConsideredSpeedUp
  *   the largest speedup, as a percentage, that an experiment can select; speedups are drawn at random from 1 to this
  *   value. Values over 100 do not have any practical use. It must be positive; with `0`, the profile does not complete
- *   once an experiment draws a speedup other than `0`.
+ *   once an experiment misses the 1 in `zeroSpeedupWeight` draw for a speedup of `0`.
  * @param sleepPrecision
  *   the estimated precision of `Thread.sleep`. When a delay is this close to its end, the profiler busy-waits instead
  *   of sleeping, to make the delay more accurate.
@@ -102,7 +102,8 @@ final case class CausalProfiler(
    * Runs `zio` with the profiler attached until the profile is complete, then interrupts `zio` and returns the result.
    * `zio` must not end on its own, so wrap it in `forever`, and call
    * [[zio.profiling.causal.CausalProfiler.progressPoint]] in it to signal progress. Without progress points, the
-   * experiments have no throughput data, and each experiment is planned twice as long as the one before.
+   * experiments have no throughput data, and with a positive `experimentTargetSamples` each experiment is planned twice
+   * as long as the one before.
    *
    * The first experiment starts only when a fiber runs in a cost center that `candidateSelector` accepts; until then
    * the profile does not complete. A known bug: when `zio` fails or dies, the profile does not fail with that error. If
