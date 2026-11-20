@@ -67,6 +67,9 @@ final case class ProfilingResult(entries: List[ProfilingResult.Entry]) {
 /** Holds [[zio.profiling.sampling.ProfilingResult.Entry]]. */
 object ProfilingResult {
 
-  /** The number of samples that found a running fiber in `costCenter`. */
+  /**
+   * The number of times a sample found a running fiber in `costCenter`. Two fibers in it at the same sample count as
+   * two.
+   */
   final case class Entry(costCenter: CostCenter, samples: Long)
 }
