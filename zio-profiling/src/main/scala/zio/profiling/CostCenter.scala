@@ -93,8 +93,8 @@ object CostCenter {
   val Root: CostCenter = CostCenter(Chunk.empty)
 
   /**
-   * Returns the cost center that `fiber` is in, without running an effect. The sampling profiler uses it to read the
-   * cost centers of other fibers.
+   * Returns the cost center that `fiber` is in, without running an effect. The profilers use it to read the cost
+   * centers of other fibers.
    */
   def getCurrentUnsafe(fiber: Fiber.Runtime[_, _])(implicit unsafe: Unsafe): CostCenter =
     fiber.unsafe.getFiberRefs().getOrDefault(globalRef)
