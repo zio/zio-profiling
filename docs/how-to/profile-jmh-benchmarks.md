@@ -15,6 +15,7 @@ Put the effects you want to profile in code that the compiler plugin tags, so th
 Add the `zio-profiling-jmh` module to the project that holds your benchmarks:
 
 ```sbt
+// JMH profiler that writes a flamegraph input file per benchmark (JVM)
 libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "@VERSION@"
 ```
 

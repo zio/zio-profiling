@@ -11,7 +11,9 @@ The tagging compiler plugin gives each ZIO effect a name made from its place in 
 The plugin must be enabled in the module that contains the code you want to profile. The rewritten code calls `CostCenter` from the `zio-profiling` library, so that dependency is needed in the same module:
 
 ```sbt
+// Both profilers, CostCenter and the profiling results (JVM)
 libraryDependencies += "dev.zio" %% "zio-profiling" % "@VERSION@"
+// Compiler plugin that tags effects with their source location (JVM)
 libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
 ```
 
