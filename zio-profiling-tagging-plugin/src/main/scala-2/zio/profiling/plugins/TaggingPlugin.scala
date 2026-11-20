@@ -36,9 +36,11 @@ import nsc.transform.{Transform, TypingTransformers}
  * definition, then the file name and line in parentheses. A local definition is named after the enclosing class or
  * object (`shop.Orders.subtotal`), without the methods around it. A tagged definition that runs another one gives a
  * nested cost center, such as `shop.Orders.report(Orders.scala:20);shop.Orders.total(Orders.scala:12)`. A default
- * argument of type `ZIO` or `ZStream` in a method is tagged too, under the name of the method the compiler makes for it
- * (`shop.Orders.find\$default\$1(Orders.scala:16)`). Other types are not tagged, for example `ZLayer`, `Exit` and
- * `Option[UIO[Int]]`.
+ * argument of type `ZIO` or `ZStream` is tagged too, under the name of the method the compiler makes for it. For a
+ * method parameter that is `shop.Orders.find\$default\$1(Orders.scala:16)` on both versions. For a class or case-class
+ * constructor parameter it is `shop.Item.<init>\$default\$1(Item.scala:3)` (or `shop.Item.apply\$default\$1` when the
+ * case class is built with `Item()`) on Scala 2, and `shop.Item.\$lessinit\$greater\$default\$1(Item.scala:3)` on Scala 3.
+ * Other types are not tagged, for example `ZLayer`, `Exit` and `Option[UIO[Int]]`.
  *
  * To see the rewritten code, compile with `-Xprint:zio-profiling-tagging` on Scala 2 or `-Vprint:zio-profiling-tagging`
  * on Scala 3. To turn the plugin off for a compilation, pass `-Xplugin-disable:zio-profiling-tagging`.
