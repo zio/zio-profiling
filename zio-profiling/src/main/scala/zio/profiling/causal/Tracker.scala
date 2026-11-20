@@ -18,6 +18,10 @@ package zio.profiling.causal
 
 import zio._
 
+/**
+ * Receives the progress and latency point events of a causal profile. `noop` ignores them; the profiler installs its
+ * own tracker in `globalRef` while it runs.
+ */
 private trait Tracker {
   def progressPoint(name: String): Unit
   def enterLatencyPoint(name: String): Unit

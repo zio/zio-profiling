@@ -21,6 +21,10 @@ import zio.profiling.CostCenter
 
 import java.util.concurrent.atomic.AtomicLong
 
+/**
+ * What the causal profiler tracks for one fiber: its cost center, whether it is running, and the delay it has already
+ * served.
+ */
 final private class FiberState private (
   val localDelay: AtomicLong,
   @volatile var costCenter: CostCenter,

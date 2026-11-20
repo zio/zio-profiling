@@ -20,16 +20,37 @@ import zio._
 
 import java.nio.file.{Files, Paths}
 
+/**
+ * The result of a causal profile: one [[zio.profiling.causal.ExperimentResult]] for each experiment, the most recent
+ * first.
+ *
+ * {{{
+ * import zio._
+ * import zio.profiling.CostCenter
+ *
+ * val work = CostCenter.withChildCostCenter("work")(ZIO.succeed(Thread.sleep(10)))
+ *
+ * val saved: Task[Unit] =
+ *   CausalProfiler(iterations = 5, warmUpPeriod = 1.second)
+ *     .profileIterations(work)
+ *     .flatMap(_.renderToFile("target/profile.coz"))
+ * }}}
+ *
+ * @see
+ *   [[https://zio.dev/zio-profiling/ ZIO Profiling]]
+ */
 final case class ProfilingResult(experiments: List[ExperimentResult]) {
 
   /**
-   * Render the experiment results so they can be uploaded to https://plasma-umass.org/coz/ for visualization.
+   * Renders the experiments as text, in the same tab-separated format that [[https://github.com/plasma-umass/coz Coz]]
+   * writes to its profile files: the lines of each experiment's `render`, joined with `\n`.
    */
   lazy val render: String =
     experiments.flatMap(_.render).mkString("\n")
 
   /**
-   * Render the experiment results and write them to file.
+   * Writes `render` to the file at `pathString`, creating missing parent directories and replacing an existing file.
+   * The text is encoded with the platform's default charset.
    */
   def renderToFile(pathString: String): Task[Unit] =
     ZIO.attempt {

@@ -1,5 +1,8 @@
 package zio.profiling.causal
 
+/**
+ * The phase that a causal profile is in: warm-up, waiting for a candidate, experiment in progress, cool-off, or done.
+ */
 sealed private trait SamplingState
 
 private object SamplingState {
