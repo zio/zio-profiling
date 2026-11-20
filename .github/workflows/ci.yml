@@ -132,6 +132,8 @@ jobs:
       uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
       uses: coursier/cache-action@v9.0.1
+    - name: Compile docs
+      run: sbt --no-colors docs/mdoc
     - name: Generate Readme
       run: sbt --no-colors docs/generateReadme
     - name: Generate Token
@@ -240,6 +242,8 @@ jobs:
       with:
         node-version: 24.22.1
         registry-url: https://registry.npmjs.org
+    - name: Compile docs
+      run: sbt --no-colors docs/mdoc
     - name: Publish Docs to NPM Registry
       run: sbt --no-colors docs/publishToNpm
   notify-docs-release:
