@@ -23,10 +23,14 @@ ZIO Profiling ships a [sampling profiler](reference/sampling-profiler.md) that s
 All modules are published for Scala 2.12, Scala 2.13 and Scala 3, on the JVM only, and depend on ZIO 2.
 
 ```scala
-libraryDependencies ++= Seq(
-  // Both profilers, CostCenter and the profiling results (JVM)
-  "dev.zio" %% "zio-profiling" % "@VERSION@"
-)
+// Both profilers, CostCenter and the profiling results (JVM)
+libraryDependencies += "dev.zio" %% "zio-profiling" % "@VERSION@"
+
+// Compiler plugin that tags effects with their source location (JVM)
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
+
+// JMH profiler that writes a flamegraph input file per benchmark (JVM)
+libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "@VERSION@"
 ```
 
 ## Modules
@@ -36,10 +40,8 @@ libraryDependencies ++= Seq(
 The plugin names each ZIO effect and stream in your code after its source location. Both profilers report per name, so you almost always want it. See [Set up the tagging compiler plugin](how-to/setup-tagging-plugin.md) and the [plugin reference](reference/tagging-plugin.md).
 
 ```scala
-libraryDependencies ++= Seq(
-  // Compiler plugin that tags effects with their source location (JVM)
-  compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
-)
+// Compiler plugin that tags effects with their source location (JVM)
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
 ```
 
 ### JMH integration
@@ -47,10 +49,8 @@ libraryDependencies ++= Seq(
 The module attaches the sampling profiler to JMH benchmarks. See [Profile JMH benchmarks](how-to/profile-jmh-benchmarks.md) and the [JMH profiler reference](reference/jmh-profiler.md).
 
 ```scala
-libraryDependencies ++= Seq(
-  // JMH profiler that writes a flamegraph input file per benchmark (JVM)
-  "dev.zio" %% "zio-profiling-jmh" % "@VERSION@"
-)
+// JMH profiler that writes a flamegraph input file per benchmark (JVM)
+libraryDependencies += "dev.zio" %% "zio-profiling-jmh" % "@VERSION@"
 ```
 
 ## Where to go next

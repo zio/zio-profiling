@@ -16,7 +16,9 @@ You need:
 Add the library and the compiler plugin to your `build.sbt`:
 
 ```sbt
+// Both profilers, CostCenter and the profiling results (JVM)
 libraryDependencies += "dev.zio" %% "zio-profiling" % "@VERSION@"
+// Compiler plugin that tags effects with their source location (JVM)
 libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
 ```
 

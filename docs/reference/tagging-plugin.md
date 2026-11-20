@@ -9,9 +9,8 @@ The tagging plugin is a compiler plugin that wraps ZIO effects and streams in a 
 ## Artifact
 
 ```scala
-libraryDependencies ++= Seq(
-  compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
-)
+// Compiler plugin that tags effects with their source location (JVM)
+libraryDependencies += compilerPlugin("dev.zio" %% "zio-profiling-tagging-plugin" % "@VERSION@")
 ```
 
 The artifact is published for Scala 2.12, Scala 2.13 and Scala 3. The code it generates calls `zio.profiling.CostCenter`, so the module that uses the plugin must also depend on `zio-profiling`.
