@@ -21,6 +21,7 @@ import zio.profiling.CostCenter
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters._
 
+/** The state of the experiment that the causal profiler is running. `toResult` turns it into an `ExperimentResult`. */
 final private class Experiment(
   val candidate: CostCenter,
   val startTime: Long,

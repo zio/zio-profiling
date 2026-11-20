@@ -18,6 +18,25 @@ package zio.profiling.causal
 
 import zio.profiling.CostCenter
 
+/**
+ * The result of one experiment of the causal profiler.
+ *
+ * @param selected
+ *   the cost center that was sped up during the experiment.
+ * @param speedup
+ *   the speedup that was applied, as a fraction: `0.25` means 25%, and `0` marks a baseline experiment.
+ * @param duration
+ *   the planned length of the experiment, in nanoseconds.
+ * @param effectiveDuration
+ *   `duration` minus the delays that the profiler added during the experiment, in nanoseconds.
+ * @param selectedSamples
+ *   the number of delay steps during the experiment: one for each running fiber in the selected cost center, or in one
+ *   nested under it, at each sampling step.
+ * @param throughputData
+ *   one entry for each progress point that ran during the experiment.
+ * @param latencyData
+ *   one entry for each latency point that had at least one arrival during the experiment.
+ */
 final case class ExperimentResult(
   selected: CostCenter,
   speedup: Float,
@@ -28,6 +47,11 @@ final case class ExperimentResult(
   latencyData: List[LatencyData]
 ) {
 
+  /**
+   * Renders the experiment as lines of Coz's tab-separated profile format: an `experiment` line, then one line for each
+   * entry of `throughputData` and of `latencyData`. The `duration` field of the `experiment` line holds
+   * `effectiveDuration`.
+   */
   def render: List[String] =
     s"experiment\tselected=${selected.render}\tspeedup=$speedup\tduration=$effectiveDuration\tselected-samples=$selectedSamples" ::
       throughputData.map(_.render) ++
