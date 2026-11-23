@@ -22,38 +22,62 @@ import zio._
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * A causal profiler inspired by https://github.com/plasma-umass/coz, that can be used to instrument code and
- * automatically figure out which areas should be optimized to increase overall throughput.
+ * A causal profiler, inspired by [[https://github.com/plasma-umass/coz Coz]], that estimates how much the throughput of
+ * a program would change if one part of it were faster.
  *
- * The profiler will periodically select regions of code for optimization and will artifically speed them up by slowing
- * down all code that runs concurrently with it. It will determine throughput based on the number of times that
- * [[zio.profiling.causal.CausalProfiler.progressPoint]] has been invoked during an experiment.
+ * The profiler runs a series of experiments. Each experiment selects a cost center and a speedup, then delays the
+ * fibers that are not in that cost center or in one nested under it, by an amount that grows with the speedup, so that
+ * the selected code runs relatively faster. Throughput is the number of times
+ * [[zio.profiling.causal.CausalProfiler.progressPoint]] runs during an experiment.
  *
- * Only [[zio.profiling.CostCenter]] will be considered for optimization, so make sure to tag the code.
+ * Only code in a [[zio.profiling.CostCenter]] other than the root is selected, so tag the code you want to measure.
+ * With the default parameters a profile takes more than five minutes; lower `warmUpPeriod`, `coolOffPeriod` and
+ * `iterations` for a short run.
+ *
+ * {{{
+ * import zio._
+ * import zio.profiling.CostCenter
+ *
+ * val parse = CostCenter.withChildCostCenter("parse")(ZIO.succeed(Thread.sleep(5)))
+ * val save  = CostCenter.withChildCostCenter("save")(ZIO.succeed(Thread.sleep(15)))
+ *
+ * val result: UIO[ProfilingResult] =
+ *   CausalProfiler(iterations = 10, warmUpPeriod = 5.seconds)
+ *     .profile((parse *> save *> CausalProfiler.progressPoint("request done")).forever)
+ * }}}
  *
  * @param iterations
- *   the number of experiments to perform
+ *   the number of experiments to run. At least one experiment runs, even when it is `0`.
  * @param candidateSelector
- *   when a new experiment is about to be performed, this is used to decide on a candidate for optimization
+ *   decides which cost centers can be selected for an experiment. It receives the last location name of a cost center:
+ *   for `Root / "outer" / "slow"` it receives `"slow"`.
  * @param samplingPeriod
- *   how often data about fiber locations gets collected. Lower values increase the overhead of the profiler.
+ *   how often the profiler runs a step. A step ends the warm-up, an experiment or a cool-off when its time is up, looks
+ *   for a candidate when an experiment is pending, and during an experiment adds `speedup` times `samplingPeriod` to
+ *   the delay of the other fibers for each running fiber in the selected cost center.
  * @param minExperimentDuration
- *   minimum duration of an experiment
+ *   the planned length of the first experiment, and the shortest planned length of the later ones.
  * @param experimentTargetSamples
- *   number of times every progress point should be invoked during an experiment. will be used to adjust duration of the
- *   next experiment.
+ *   the number of times each progress point should run during an experiment. The profiler doubles or halves the length
+ *   of the next experiment to get closer to it.
  * @param warmUpPeriod
- *   period of time to delay start of the profiler.
+ *   the time to wait after the profile starts before the first experiment can start. The program runs during this time.
  * @param coolOffPeriod
- *   period of time to wait between experiments.
+ *   the time to wait between two experiments.
  * @param zeroSpeedupWeight
- *   rate of selecting no speedup for the experiment. A `zeroSpeedupWeight` of n means that that every nth experiment
- *   will have no speedup applied.
+ *   how often an experiment applies no speedup, which gives a baseline: each experiment has a chance of 1 in
+ *   `zeroSpeedupWeight` to get a speedup of `0`. It must be positive; with `0`, no experiment starts and the profile
+ *   does not complete.
  * @param maxConsideredSpeedUp
- *   maximum speedup percentage that will be selected for experiments. Values over 100 do not have any practical use.
+ *   the largest speedup, as a percentage, that an experiment can select; speedups are drawn at random from 1 to this
+ *   value. Values over 100 do not have any practical use. It must be positive; with `0`, the profile does not complete
+ *   once an experiment misses the 1 in `zeroSpeedupWeight` draw for a speedup of `0`.
  * @param sleepPrecision
- *   estimated precision of `Thread.sleep`. The profiler will busy spin once it enters this proximity to the target time
- *   in order to increase accuraccy.
+ *   the estimated precision of `Thread.sleep`. When a delay is this close to its end, the profiler busy-waits instead
+ *   of sleeping, to make the delay more accurate.
+ *
+ * @see
+ *   [[https://zio.dev/zio-profiling/ ZIO Profiling]]
  */
 final case class CausalProfiler(
   iterations: Int = 100,
@@ -75,10 +99,16 @@ final case class CausalProfiler(
   private val minExperimentDurationNanos = minExperimentDuration.toNanos()
 
   /**
-   * Profile a program and get the result. The program must run long enough for the profiler to complete and will be
-   * interrupted once the profiling is done.
+   * Runs `zio` with the profiler attached until the profile is complete, then interrupts `zio` and returns the result.
+   * `zio` must not end on its own, so wrap it in `forever`, and call
+   * [[zio.profiling.causal.CausalProfiler.progressPoint]] in it to signal progress. Without progress points, the
+   * experiments have no throughput data, and with a positive `experimentTargetSamples` each experiment is planned twice
+   * as long as the one before.
    *
-   * The profiled program must use the `progressPoint` function to signal progress to the profiler.
+   * The first experiment starts only when a fiber runs in a cost center that `candidateSelector` accepts; until then
+   * the profile does not complete. A known bug: when `zio` fails or dies, the profile does not fail with that error. If
+   * this happens before the last experiment, the profile does not complete; if it happens during the last experiment,
+   * the profile succeeds with the result.
    */
   def profile[R, E](zio: ZIO[R, E, Nothing])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
     ZIO.scoped[R] {
@@ -97,22 +127,51 @@ final case class CausalProfiler(
     }
 
   /**
-   * Profile a zio program by running it in a loop and using completion of an iteration as the progress metric.
+   * Runs `zio` in a loop and profiles the loop with `profile`, with a progress point named `"iteration done"` after
+   * each run. Use it when one run of `zio` is one unit of work.
    *
    * {{{
-   * profileIterations {
-   *   val fast = ZIO.succeed(Thread.sleep(20)) <# "fast"
-   *   val slow = ZIO.succeed(Thread.sleep(60)) <# "slow"
-   *   fast <&> slow
-   * }
+   * import zio._
+   * import zio.profiling.CostCenter
+   *
+   * val result: UIO[ProfilingResult] =
+   *   CausalProfiler(iterations = 10, warmUpPeriod = 5.seconds).profileIterations {
+   *     val fast = CostCenter.withChildCostCenter("fast")(ZIO.succeed(Thread.sleep(20)))
+   *     val slow = CostCenter.withChildCostCenter("slow")(ZIO.succeed(Thread.sleep(60)))
+   *     fast <&> slow
+   *   }
    * }}}
    */
   def profileIterations[R, E](zio: ZIO[R, E, Any])(implicit trace: Trace): ZIO[R, E, ProfilingResult] =
     profile((zio *> CausalProfiler.progressPoint("iteration done")).forever)
 
   /**
-   * Create a supervisor that can be used to profile a zio program. Getting the `value` of the supervisor will suspend
-   * until profiling to complete. For profiling to work correctly, OpSupervision must be enabled for the effect.
+   * Creates the profiler as a [[zio.Supervisor]], for programs that `profile` can't wrap. Reading its `value` waits
+   * until the profile is complete.
+   *
+   * The profiled effects must run with `RuntimeFlag.OpSupervision` enabled: without it, the profiler does not see the
+   * cost center changes of a fiber after it starts, and the profile may not complete. Progress points count only in
+   * fibers that inherit the profiler from the fiber that ran `supervisor`, such as the fibers it forks inside the
+   * scope.
+   *
+   * {{{
+   * import zio._
+   * import zio.profiling.CostCenter
+   *
+   * val program: UIO[Nothing] =
+   *   (CostCenter.withChildCostCenter("step")(ZIO.succeed(Thread.sleep(5))) *>
+   *     CausalProfiler.progressPoint("step done")).forever
+   *
+   * val result: UIO[ProfilingResult] =
+   *   ZIO.scoped {
+   *     CausalProfiler(iterations = 5, warmUpPeriod = 1.second).supervisor.flatMap { profiler =>
+   *       program
+   *         .withRuntimeFlags(RuntimeFlags.enable(RuntimeFlag.OpSupervision))
+   *         .supervised(profiler)
+   *         .forkScoped *> profiler.value
+   *     }
+   *   }
+   * }}}
    */
   def supervisor(implicit trace: Trace): ZIO[Scope, Nothing, Supervisor[ProfilingResult]] =
     ZIO.withFiberRuntime[Scope, Nothing, Supervisor[ProfilingResult]] { case (runtime, _) =>
@@ -418,23 +477,48 @@ final case class CausalProfiler(
   }
 }
 
+/**
+ * Functions that mark progress and latency in a program profiled by [[zio.profiling.causal.CausalProfiler]]. They do
+ * nothing when no experiment is running.
+ */
 object CausalProfiler {
 
+  /**
+   * Counts one visit of the progress point `name` in the running experiment. The profiler measures throughput as the
+   * number of visits during each experiment.
+   */
   def progressPoint(name: String)(implicit trace: Trace): UIO[Unit] =
     Tracker.globalRef.get.flatMap { tracker =>
       ZIO.succeed(tracker.progressPoint(name))
     }
 
+  /**
+   * Counts one arrival at the latency point `name` in the running experiment. Pair it with `exitLatencyPoint`, or use
+   * `latencyPointScoped`.
+   */
   def enterLatencyPoint(name: String)(implicit trace: Trace): UIO[Unit] =
     Tracker.globalRef.get.flatMap { tracker =>
       ZIO.succeed(tracker.enterLatencyPoint(name))
     }
 
+  /**
+   * Counts one departure from the latency point `name` in the running experiment.
+   */
   def exitLatencyPoint(name: String)(implicit trace: Trace): UIO[Unit] =
     Tracker.globalRef.get.flatMap { tracker =>
       ZIO.succeed(tracker.exitLatencyPoint(name))
     }
 
+  /**
+   * Calls `enterLatencyPoint(name)` now and `exitLatencyPoint(name)` when the scope closes.
+   *
+   * {{{
+   * import zio._
+   *
+   * val request: UIO[Unit] =
+   *   ZIO.scoped(CausalProfiler.latencyPointScoped("request") *> ZIO.succeed(Thread.sleep(10)))
+   * }}}
+   */
   def latencyPointScoped(name: String)(implicit trace: Trace): URIO[Scope, Unit] =
     ZIO.acquireRelease(enterLatencyPoint(name))(_ => exitLatencyPoint(name))
 }

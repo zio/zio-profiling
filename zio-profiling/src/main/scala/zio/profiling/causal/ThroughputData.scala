@@ -16,8 +16,17 @@
 
 package zio.profiling.causal
 
+/**
+ * The number of visits to one progress point during one experiment of the causal profiler.
+ *
+ * @param name
+ *   the name passed to `progressPoint`.
+ * @param delta
+ *   how many times the progress point ran during the experiment.
+ */
 final case class ThroughputData(name: String, delta: Int) {
 
+  /** Renders a `throughput-point` line of Coz's tab-separated profile format, with the fields `name` and `delta`. */
   lazy val render: String =
     s"throughput-point\tname=$name\tdelta=$delta"
 }

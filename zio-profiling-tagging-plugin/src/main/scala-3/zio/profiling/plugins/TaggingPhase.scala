@@ -15,8 +15,13 @@ import dotty.tools.dotc.core.Types.TypeRef
 import dotty.tools.dotc.ast.tpd.{TreeOps, Literal}
 import dotty.tools.dotc.ast.untpd.Mod.Given.apply
 
+/**
+ * The compiler phase of the Scala 3 [[TaggingPlugin]]: it wraps the right-hand sides of definitions of type `ZIO` or
+ * `ZStream` in a cost center, as described on [[TaggingPlugin]]. It runs after `pickler` and before `staging`.
+ */
 final class TaggingPhase extends PluginPhase {
 
+  /** The phase name, `zio-profiling-tagging`. Pass it to `-Vprint:` to see the rewritten code. */
   val phaseName = "zio-profiling-tagging"
 
   override val runsAfter = Set(Pickler.name)
