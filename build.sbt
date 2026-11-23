@@ -164,6 +164,6 @@ lazy val docs = project
     scalacOptions -= "-Xfatal-warnings",
     projectName                                := "ZIO Profiling",
     mainModuleName                             := (core / moduleName).value,
-    projectStage                               := ProjectStage.Concept,
+    projectStage                               := ProjectStage.Experimental,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core)
   )
