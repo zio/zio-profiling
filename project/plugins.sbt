@@ -1,6 +1,6 @@
 addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"        % "2.1.3")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-scalafix"     % "0.14.10")
-addSbtPlugin("com.eed3si9n"                      % "sbt-buildinfo"    % "0.13.2")
+addSbtPlugin("com.eed3si9n"                      % "sbt-buildinfo"    % "0.14.0")
 addSbtPlugin("com.github.sbt"                    % "sbt-ci-release"   % "1.12.1")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"       % "0.6.1")
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.1.0")
